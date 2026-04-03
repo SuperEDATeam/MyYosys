@@ -1,0 +1,30 @@
+# End-to-end MyIR test script
+# Usage:  yosys < test_e2e.ys   (or run inside Yosys shell line by line)
+
+echo "=== Step 1: Read Verilog ==="
+read_verilog passes/myir/tests/carry.v
+
+echo "=== Step 2: Import to MyIR ==="
+myir_import
+
+echo "=== Step 3: Dump MyIR (before optimisation) ==="
+myir_dump
+
+echo "=== Step 4: Run optimisations ==="
+myir_opt_share
+myir_opt_const
+myir_opt_clean
+
+echo "=== Step 5: Dump MyIR (after optimisation) ==="
+myir_dump
+
+echo "=== Step 6: Generate DOT visualisation ==="
+myir_show -o carry_myir.dot -fmt png
+
+echo "=== Step 7: Export back to RTLIL ==="
+myir_export
+
+echo "=== Step 8: Write output Verilog ==="
+write_verilog carry_out.v
+
+echo "=== Done! Check carry_out.v and carry_myir.dot ==="

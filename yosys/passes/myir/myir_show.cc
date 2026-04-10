@@ -27,6 +27,89 @@ static std::string label_name(const std::string &s)
     return s;
 }
 
+static std::string emit_stmt_dot(std::ostream &os, const MyIR::Statement &s,
+                                  const std::string &prefix, int &sid);
+
+static void emit_stmts_dot(std::ostream &os,
+                            const std::vector<MyIR::Statement> &stmts,
+                            const std::string &prefix, int &sid,
+                            const std::string &from_id = "")
+{
+    std::string prev = from_id;
+    for (auto &s : stmts) {
+        std::string nid = emit_stmt_dot(os, s, prefix, sid);
+        if (!prev.empty())
+            os << "    \"" << prev << "\" -> \"" << nid << "\";\n";
+        prev = nid;
+    }
+}
+
+static std::string emit_stmt_dot(std::ostream &os, const MyIR::Statement &s,
+                                  const std::string &prefix, int &sid)
+{
+    std::string nid = prefix + "_s" + std::to_string(sid++);
+
+    switch (s.kind) {
+    case MyIR::Statement::Assign:
+        os << "    \"" << nid << "\" [label=\""
+           << sanitize(s.proc_assign.lhs) << " "
+           << (s.proc_assign.is_blocking ? "=" : "<=") << " "
+           << sanitize(s.proc_assign.rhs)
+           << "\", shape=box, style=filled, fillcolor=\"#e0f0e0\"];\n";
+        break;
+
+    case MyIR::Statement::If:
+        os << "    \"" << nid << "\" [label=\"if ("
+           << sanitize(s.if_else.condition)
+           << ")\", shape=diamond, style=filled, fillcolor=\"#ffe0e0\"];\n";
+        {
+            std::string then_id = nid + "_T";
+            std::string else_id = nid + "_F";
+            int sub = 0;
+            os << "    \"" << then_id << "\" [label=\"then\", shape=plaintext];\n";
+            os << "    \"" << nid << "\" -> \"" << then_id << "\";\n";
+            emit_stmts_dot(os, s.if_else.then_body, then_id, sub, then_id);
+            if (!s.if_else.else_body.empty()) {
+                sub = 0;
+                os << "    \"" << else_id << "\" [label=\"else\", shape=plaintext];\n";
+                os << "    \"" << nid << "\" -> \"" << else_id << "\";\n";
+                emit_stmts_dot(os, s.if_else.else_body, else_id, sub, else_id);
+            }
+        }
+        break;
+
+    case MyIR::Statement::Case:
+        os << "    \"" << nid << "\" [label=\"case ("
+           << sanitize(s.case_stmt.select)
+           << ")\", shape=trapezium, style=filled, fillcolor=\"#e0e0ff\"];\n";
+        for (size_t ci = 0; ci < s.case_stmt.items.size(); ci++) {
+            std::string br_id = nid + "_br" + std::to_string(ci);
+            std::string lbl;
+            if (s.case_stmt.items[ci].values.empty())
+                lbl = "default";
+            else {
+                for (size_t vi = 0; vi < s.case_stmt.items[ci].values.size(); vi++) {
+                    if (vi) lbl += ",";
+                    lbl += s.case_stmt.items[ci].values[vi];
+                }
+            }
+            os << "    \"" << br_id << "\" [label=\"" << lbl
+               << "\", shape=plaintext];\n";
+            os << "    \"" << nid << "\" -> \"" << br_id << "\";\n";
+            int sub = 0;
+            emit_stmts_dot(os, s.case_stmt.items[ci].body, br_id, sub, br_id);
+        }
+        break;
+
+    case MyIR::Statement::Block:
+        os << "    \"" << nid << "\" [label=\"block\", shape=plaintext];\n";
+        emit_stmts_dot(os, s.block_body, nid, sid, nid);
+        break;
+    }
+
+    return nid;
+}
+
 static void generate_dot(std::ostream &os, const MyIR::Module &m)
 {
     os << "digraph \"" << sanitize(m.name) << "\" {\n";
@@ -103,6 +186,24 @@ static void generate_dot(std::ostream &os, const MyIR::Module &m)
         std::string dst = "w_" + sanitize(a.lhs);
         os << "  \"" << src << "\" -> \"" << dst
            << "\" [style=dashed, color=gray];\n";
+    }
+
+    // procedural blocks
+    for (size_t pi = 0; pi < m.proc_blocks.size(); pi++) {
+        auto &pb = m.proc_blocks[pi];
+        std::string sens_label;
+        for (size_t si = 0; si < pb.sensitivity.size(); si++) {
+            if (si) sens_label += " or ";
+            sens_label += MyIR::sens_type_str(pb.sensitivity[si].type);
+            if (!pb.sensitivity[si].signal.empty())
+                sens_label += " " + label_name(pb.sensitivity[si].signal);
+        }
+        os << "\n  subgraph cluster_proc_" << pi << " {\n";
+        os << "    label=\"always @(" << sanitize(sens_label) << ")\";\n";
+        os << "    style=dashed;\n";
+        int sid = 0;
+        emit_stmts_dot(os, pb.body, "p" + std::to_string(pi), sid);
+        os << "  }\n";
     }
 
     os << "}\n";

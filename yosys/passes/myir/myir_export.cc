@@ -148,6 +148,13 @@ struct MyIRExportPass : public Pass {
                 mod->connect(lhs, rhs);
             }
 
+            if (!mymod.proc_blocks.empty())
+                log_warning("Module '%s' contains %d procedural block(s) "
+                            "from AST import; these are NOT exported to "
+                            "RTLIL (only exprs/connects are exported).\n",
+                            mymod.name.c_str(),
+                            (int)mymod.proc_blocks.size());
+
             log("  Exported module '%s': %d wires, %d cells, "
                 "%d connections.\n",
                 mymod.name.c_str(),

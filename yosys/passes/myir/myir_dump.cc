@@ -23,6 +23,63 @@ static std::string pretty_name(const std::string &s)
     return s;
 }
 
+static void dump_stmt(std::ostream &os, const MyIR::Statement &s, int indent);
+
+static void dump_stmts(std::ostream &os,
+                        const std::vector<MyIR::Statement> &stmts,
+                        int indent)
+{
+    for (auto &s : stmts)
+        dump_stmt(os, s, indent);
+}
+
+static std::string ind(int n) { return std::string(n, ' '); }
+
+static void dump_stmt(std::ostream &os, const MyIR::Statement &s, int indent)
+{
+    switch (s.kind) {
+    case MyIR::Statement::Assign:
+        os << ind(indent) << "assign "
+           << pretty_name(s.proc_assign.lhs) << " "
+           << (s.proc_assign.is_blocking ? "=" : "<=") << " "
+           << pretty_name(s.proc_assign.rhs) << "\n";
+        break;
+
+    case MyIR::Statement::If:
+        os << ind(indent) << "if (" << pretty_name(s.if_else.condition) << ")\n";
+        dump_stmts(os, s.if_else.then_body, indent + 2);
+        if (!s.if_else.else_body.empty()) {
+            os << ind(indent) << "else\n";
+            dump_stmts(os, s.if_else.else_body, indent + 2);
+        }
+        break;
+
+    case MyIR::Statement::Case:
+        os << ind(indent) << "case (" << pretty_name(s.case_stmt.select) << ")\n";
+        for (auto &item : s.case_stmt.items) {
+            if (item.values.empty())
+                os << ind(indent + 2) << "default:\n";
+            else {
+                os << ind(indent + 2);
+                for (size_t i = 0; i < item.values.size(); i++) {
+                    if (i) os << ", ";
+                    os << item.values[i];
+                }
+                os << ":\n";
+            }
+            dump_stmts(os, item.body, indent + 4);
+        }
+        os << ind(indent) << "endcase\n";
+        break;
+
+    case MyIR::Statement::Block:
+        os << ind(indent) << "begin\n";
+        dump_stmts(os, s.block_body, indent + 2);
+        os << ind(indent) << "end\n";
+        break;
+    }
+}
+
 static void dump_module(std::ostream &os, const MyIR::Module &m)
 {
     os << "module " << pretty_name(m.name) << "\n";
@@ -57,6 +114,21 @@ static void dump_module(std::ostream &os, const MyIR::Module &m)
     for (auto &c : m.connects)
         os << "  connect " << pretty_name(c.lhs) << " = "
            << pretty_name(c.rhs) << "\n";
+
+    for (size_t pi = 0; pi < m.proc_blocks.size(); pi++) {
+        auto &pb = m.proc_blocks[pi];
+        os << "\n  always @(";
+        for (size_t si = 0; si < pb.sensitivity.size(); si++) {
+            if (si) os << " or ";
+            auto &s = pb.sensitivity[si];
+            os << MyIR::sens_type_str(s.type);
+            if (!s.signal.empty())
+                os << " " << pretty_name(s.signal);
+        }
+        os << ")  // proc_block " << pi << "\n";
+        dump_stmts(os, pb.body, 4);
+        os << "  end\n";
+    }
 
     os << "end\n\n";
 }

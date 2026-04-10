@@ -26,6 +26,7 @@ static std::string eval_expr(MyIR::OpType op,
     case MyIR::OpType::And:          r = a & b;                break;
     case MyIR::OpType::Or:           r = a | b;                break;
     case MyIR::OpType::Xor:          r = a ^ b;                break;
+    case MyIR::OpType::Xnor:         r = (~(a ^ b)) & mask;   break;
     case MyIR::OpType::Not:          r = (~a) & mask;          break;
     case MyIR::OpType::Eq:           r = (a == b) ? 1 : 0;    break;
     case MyIR::OpType::Ne:           r = (a != b) ? 1 : 0;    break;

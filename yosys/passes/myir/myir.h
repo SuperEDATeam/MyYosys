@@ -21,10 +21,10 @@ struct Port {
 };
 
 enum class OpType {
-    And, Or, Xor, Not,
+    And, Or, Xor, Xnor, Not,
     Eq, Ne, Lt, Le, Gt, Ge,
     Add, Sub, Mul,
-    Mux,
+    Mux, Concat,
     Buf, Pos, Neg,
     Reduce_And, Reduce_Or, Reduce_Xor, Reduce_Xnor, Reduce_Bool,
     Shl, Shr, Sshl, Sshr,
@@ -44,12 +44,59 @@ struct Assign {
     std::string rhs;
 };
 
+// ----- Procedural block types (from AST) -----
+
+struct ProcAssign {
+    bool        is_blocking = true;
+    std::string lhs;
+    std::string rhs;
+};
+
+struct Statement;
+
+struct IfElse {
+    std::string condition;
+    std::vector<Statement> then_body;
+    std::vector<Statement> else_body;
+};
+
+struct CaseItem {
+    std::vector<std::string> values;   // empty = default
+    std::vector<Statement>   body;
+};
+
+struct CaseStmt {
+    std::string            select;
+    std::vector<CaseItem>  items;
+};
+
+struct Statement {
+    enum Kind { Assign, If, Case, Block } kind = Assign;
+    ProcAssign             proc_assign;
+    IfElse                 if_else;
+    CaseStmt               case_stmt;
+    std::vector<Statement> block_body;
+};
+
+struct SensItem {
+    enum Type { Star, Posedge, Negedge, Level } type = Star;
+    std::string signal;
+};
+
+struct ProcBlock {
+    std::vector<SensItem>  sensitivity;
+    std::vector<Statement> body;
+};
+
+// ----- Module / Design -----
+
 struct Module {
     std::string                  name;
     std::vector<Port>            ports;
     std::map<std::string, Port>  wires;
     std::vector<Expr>            exprs;
     std::vector<Assign>          connects;
+    std::vector<ProcBlock>       proc_blocks;
 };
 
 struct Design {
@@ -71,6 +118,9 @@ bool         is_constant_name(const std::string &name);
 uint64_t     const_to_uint(const std::string &name);
 int          const_width(const std::string &name);
 std::string  uint_to_const(uint64_t val, int width);
+
+const char*  stmt_kind_str(Statement::Kind k);
+const char*  sens_type_str(SensItem::Type t);
 
 } // namespace MyIR
 

@@ -22,6 +22,7 @@ const char* optype_to_string(OpType op) {
     case OpType::And:          return "And";
     case OpType::Or:           return "Or";
     case OpType::Xor:          return "Xor";
+    case OpType::Xnor:         return "Xnor";
     case OpType::Not:          return "Not";
     case OpType::Eq:           return "Eq";
     case OpType::Ne:           return "Ne";
@@ -33,6 +34,7 @@ const char* optype_to_string(OpType op) {
     case OpType::Sub:          return "Sub";
     case OpType::Mul:          return "Mul";
     case OpType::Mux:          return "Mux";
+    case OpType::Concat:       return "Concat";
     case OpType::Buf:          return "Buf";
     case OpType::Pos:          return "Pos";
     case OpType::Neg:          return "Neg";
@@ -56,6 +58,7 @@ OpType string_to_optype(const std::string &s) {
     if (s == "And")         return OpType::And;
     if (s == "Or")          return OpType::Or;
     if (s == "Xor")         return OpType::Xor;
+    if (s == "Xnor")        return OpType::Xnor;
     if (s == "Not")         return OpType::Not;
     if (s == "Eq")          return OpType::Eq;
     if (s == "Ne")          return OpType::Ne;
@@ -67,6 +70,7 @@ OpType string_to_optype(const std::string &s) {
     if (s == "Sub")         return OpType::Sub;
     if (s == "Mul")         return OpType::Mul;
     if (s == "Mux")         return OpType::Mux;
+    if (s == "Concat")      return OpType::Concat;
     if (s == "Buf")         return OpType::Buf;
     if (s == "Pos")         return OpType::Pos;
     if (s == "Neg")         return OpType::Neg;
@@ -93,6 +97,7 @@ OpType celltype_to_optype(const std::string &type) {
     if (type == "$and")          return OpType::And;
     if (type == "$or")           return OpType::Or;
     if (type == "$xor")          return OpType::Xor;
+    if (type == "$xnor")         return OpType::Xnor;
     if (type == "$not")          return OpType::Not;
     if (type == "$eq")           return OpType::Eq;
     if (type == "$ne")           return OpType::Ne;
@@ -127,6 +132,7 @@ std::string optype_to_celltype(OpType op) {
     case OpType::And:          return "$and";
     case OpType::Or:           return "$or";
     case OpType::Xor:          return "$xor";
+    case OpType::Xnor:         return "$xnor";
     case OpType::Not:          return "$not";
     case OpType::Eq:           return "$eq";
     case OpType::Ne:           return "$ne";
@@ -138,6 +144,7 @@ std::string optype_to_celltype(OpType op) {
     case OpType::Sub:          return "$sub";
     case OpType::Mul:          return "$mul";
     case OpType::Mux:          return "$mux";
+    case OpType::Concat:       return "$concat";
     case OpType::Buf:          return "$buf";
     case OpType::Pos:          return "$pos";
     case OpType::Neg:          return "$neg";
@@ -176,6 +183,8 @@ int optype_num_inputs(OpType op) {
         return 1;
     case OpType::Mux:
         return 3;   // A, B, S
+    case OpType::Concat:
+        return -1;  // variable number of operands
     default:
         return 2;   // A, B
     }
@@ -217,6 +226,26 @@ std::string uint_to_const(uint64_t val, int width) {
     for (int i = width - 1; i >= 0; i--)
         bits += ((val >> i) & 1) ? '1' : '0';
     return std::to_string(width) + "'" + bits;
+}
+
+const char* stmt_kind_str(Statement::Kind k) {
+    switch (k) {
+    case Statement::Assign: return "assign";
+    case Statement::If:     return "if";
+    case Statement::Case:   return "case";
+    case Statement::Block:  return "block";
+    default:                return "?";
+    }
+}
+
+const char* sens_type_str(SensItem::Type t) {
+    switch (t) {
+    case SensItem::Star:    return "*";
+    case SensItem::Posedge: return "posedge";
+    case SensItem::Negedge: return "negedge";
+    case SensItem::Level:   return "level";
+    default:                return "?";
+    }
 }
 
 } // namespace MyIR

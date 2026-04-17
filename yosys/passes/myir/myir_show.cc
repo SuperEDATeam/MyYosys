@@ -216,13 +216,28 @@ struct MyIRShowPass : public Pass {
     void help() override
     {
         log("\n");
-        log("    myir_show [-o <dotfile>] [-fmt <format>] [-viewer <cmd>]\n");
+        log("    myir_show [-o <dotfile>] [-fmt <format>] [-view]\n");
+        log("             [-viewer <cmd>] [-no-image]\n");
         log("\n");
-        log("Generate a Graphviz DOT file visualising the MyIR design.\n");
+        log("Generate a Graphviz DOT file and image for the current MyIR\n");
+        log("design.\n");
         log("\n");
         log("    -o <file>        write DOT to <file> (default: myir_show.dot)\n");
-        log("    -fmt <format>    output image format, e.g. png, pdf (default: png)\n");
-        log("    -viewer <cmd>    open result with <cmd> (e.g. 'start' on Windows)\n");
+        log("    -fmt <format>    image format: png|pdf|svg (default: png)\n");
+        log("    -view            open the image with the OS default\n");
+        log("                     associated viewer after generation\n");
+        log("    -viewer <cmd>    open the image with a custom command\n");
+        log("                     (takes precedence over -view)\n");
+        log("    -no-image        only write DOT; do not invoke Graphviz\n");
+        log("\n");
+        log("To open an already-generated file without regenerating it,\n");
+        log("use the 'myir_view' command.\n");
+        log("\n");
+        log("Graphviz 'dot' is located in the following order:\n");
+        log("  1. <exe_dir>/tools/graphviz/bin/dot(.exe) and up to 3\n");
+        log("     parent directories (covers repo root for VS builds)\n");
+        log("  2. MYIR_DOT environment variable\n");
+        log("  3. system PATH\n");
         log("\n");
     }
 
@@ -233,6 +248,8 @@ struct MyIRShowPass : public Pass {
         std::string dot_file = "myir_show.dot";
         std::string fmt      = "png";
         std::string viewer;
+        bool flag_view     = false;
+        bool flag_no_image = false;
 
         size_t argidx;
         for (argidx = 1; argidx < args.size(); argidx++) {
@@ -248,6 +265,14 @@ struct MyIRShowPass : public Pass {
                 viewer = args[++argidx];
                 continue;
             }
+            if (args[argidx] == "-view") {
+                flag_view = true;
+                continue;
+            }
+            if (args[argidx] == "-no-image") {
+                flag_no_image = true;
+                continue;
+            }
             break;
         }
         extra_args(args, argidx, design);
@@ -258,6 +283,7 @@ struct MyIRShowPass : public Pass {
             return;
         }
 
+        // -- 1) write .dot ---------------------------------------------------
         {
             std::ofstream ofs(dot_file);
             if (!ofs.is_open())
@@ -267,7 +293,12 @@ struct MyIRShowPass : public Pass {
         }
         log("  DOT written to '%s'.\n", dot_file.c_str());
 
-        // try to convert to image using Graphviz
+        if (flag_no_image) {
+            log("  -no-image specified; skipping Graphviz invocation.\n");
+            return;
+        }
+
+        // -- 2) derive output image path ------------------------------------
         std::string img_file = dot_file;
         {
             size_t dpos = img_file.rfind('.');
@@ -276,19 +307,50 @@ struct MyIRShowPass : public Pass {
             img_file += "." + fmt;
         }
 
-        std::string dot_cmd = "dot -T" + fmt + " -o \"" + img_file
+        // -- 3) locate a usable 'dot' ---------------------------------------
+        std::string dot_exe = MyIR::find_dot_executable();
+        if (dot_exe.empty()) {
+            log_error("myir_show: Graphviz 'dot' command not found.\n"
+                      "  Option 1: Install Graphviz and add its 'bin' folder\n"
+                      "            to PATH.  https://graphviz.org/download/\n"
+                      "  Option 2: Extract a Graphviz portable build into\n"
+                      "            <repo>/tools/graphviz/  so that\n"
+                      "            <repo>/tools/graphviz/bin/dot(.exe)\n"
+                      "            exists. (Also accepted: the same layout\n"
+                      "            under the executable's own directory,\n"
+                      "            or up to 3 parent directories above it.)\n"
+                      "  Option 3: Set the MYIR_DOT environment variable to\n"
+                      "            the full path of dot(.exe).\n"
+                      "  (Use 'myir_show -no-image' to skip image generation\n"
+                      "   and produce only the .dot file.)\n");
+            return; // log_error normally does not return, but keep for safety
+        }
+        log("  Using dot: %s\n", dot_exe.c_str());
+
+        // -- 4) run dot -----------------------------------------------------
+        std::string dot_cmd = dot_exe + " -T" + fmt + " -o \"" + img_file
                              + "\" \"" + dot_file + "\"";
         log("  Running: %s\n", dot_cmd.c_str());
         int rc = run_command(dot_cmd);
-        if (rc != 0)
+        if (rc != 0) {
             log_warning("Graphviz 'dot' returned %d. "
-                        "Is Graphviz installed and in PATH?\n", rc);
-        else
-            log("  Image written to '%s'.\n", img_file.c_str());
+                        "The image may not have been generated.\n", rc);
+            return;
+        }
+        log("  Image written to '%s'.\n", img_file.c_str());
 
-        if (!viewer.empty() && rc == 0) {
+        // -- 5) optional viewer --------------------------------------------
+        if (!viewer.empty()) {
             std::string view_cmd = viewer + " \"" + img_file + "\"";
+            log("  Exec: %s\n", view_cmd.c_str());
             run_command(view_cmd);
+        } else if (flag_view) {
+            std::string view_cmd = MyIR::make_open_cmd(img_file);
+            log("  Exec: %s\n", view_cmd.c_str());
+            run_command(view_cmd);
+        } else {
+            log("  Use -view to open now, or run "
+                "'myir_view %s' later.\n", img_file.c_str());
         }
     }
 } MyIRShowPass;

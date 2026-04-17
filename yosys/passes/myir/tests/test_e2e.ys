@@ -19,7 +19,15 @@ echo "=== Step 5: Dump MyIR (after optimisation) ==="
 myir_dump
 
 echo "=== Step 6: Generate DOT visualisation ==="
+# Usage A: generate files only (non-interactive / CI-friendly)
 myir_show -o carry_myir.dot -fmt png
+
+# Usage B (commented): generate AND open in default viewer in one go
+# myir_show -o carry_myir.dot -fmt png -view
+
+# Usage C (commented): open the already-generated image later, without
+# re-running Graphviz
+# myir_view carry_myir.png
 
 echo "=== Step 7: Export back to RTLIL ==="
 myir_export

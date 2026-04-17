@@ -122,6 +122,28 @@ std::string  uint_to_const(uint64_t val, int width);
 const char*  stmt_kind_str(Statement::Kind k);
 const char*  sens_type_str(SensItem::Type t);
 
+// ----- Visualization helpers (used by myir_show / myir_view) -----
+
+// Directory containing the running yosys executable (trailing separator
+// stripped).  Empty string on failure.
+std::string get_executable_dir();
+
+// Locate a usable Graphviz 'dot' executable.  Lookup order:
+//   1. <exe_dir>/tools/graphviz/bin/dot(.exe)
+//   2. <exe_dir>/../tools/graphviz/bin/dot(.exe)   (VS Debug/Release subdir)
+//   3. Environment variable MYIR_DOT
+//   4. System PATH
+// Returns a shell-ready string (already quoted when it contains a full path)
+// or an empty string if no 'dot' was found.
+std::string find_dot_executable();
+
+// Build an OS-specific "open with default associated application" command
+// for the given file.  The returned string can be passed to run_command().
+//   Windows : cmd /c start "" "<file>"   (non-blocking)
+//   macOS   : open "<file>"
+//   Linux   : xdg-open "<file>" >/dev/null 2>&1 &
+std::string make_open_cmd(const std::string &file);
+
 } // namespace MyIR
 
 #endif

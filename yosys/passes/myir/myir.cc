@@ -1,5 +1,20 @@
 #include "passes/myir/myir.h"
 #include <cctype>
+#include <cstdlib>
+#include <fstream>
+
+#if defined(_WIN32)
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
+#elif defined(__APPLE__)
+#  include <mach-o/dyld.h>
+#  include <unistd.h>
+#else
+#  include <unistd.h>
+#  include <limits.h>
+#endif
 
 namespace MyIR {
 
@@ -246,6 +261,118 @@ const char* sens_type_str(SensItem::Type t) {
     case SensItem::Level:   return "level";
     default:                return "?";
     }
+}
+
+// ----------------------------------------------------------------
+//  Visualization helpers (used by myir_show / myir_view)
+// ----------------------------------------------------------------
+
+static bool path_exists(const std::string &p)
+{
+    if (p.empty()) return false;
+    std::ifstream f(p.c_str());
+    return f.good();
+}
+
+std::string get_executable_dir()
+{
+#if defined(_WIN32)
+    char buf[MAX_PATH];
+    DWORD n = GetModuleFileNameA(NULL, buf, MAX_PATH);
+    if (n == 0 || n == MAX_PATH) return std::string();
+    std::string s(buf, n);
+    size_t pos = s.find_last_of("\\/");
+    if (pos == std::string::npos) return std::string();
+    return s.substr(0, pos);
+#elif defined(__APPLE__)
+    char buf[4096];
+    uint32_t size = sizeof(buf);
+    if (_NSGetExecutablePath(buf, &size) != 0) return std::string();
+    std::string s(buf);
+    size_t pos = s.find_last_of('/');
+    if (pos == std::string::npos) return std::string();
+    return s.substr(0, pos);
+#else
+    char buf[4096];
+    ssize_t n = readlink("/proc/self/exe", buf, sizeof(buf) - 1);
+    if (n <= 0) return std::string();
+    buf[n] = 0;
+    std::string s(buf);
+    size_t pos = s.find_last_of('/');
+    if (pos == std::string::npos) return std::string();
+    return s.substr(0, pos);
+#endif
+}
+
+// Quote a path for safe shell use (wrap in double quotes if it contains
+// characters that could confuse the shell).
+static std::string quote_path(const std::string &p)
+{
+    if (p.empty()) return p;
+    if (p.front() == '"' && p.back() == '"') return p;
+    return std::string("\"") + p + "\"";
+}
+
+std::string find_dot_executable()
+{
+#if defined(_WIN32)
+    const char *dot_name = "dot.exe";
+    const char *sep = "\\";
+#else
+    const char *dot_name = "dot";
+    const char *sep = "/";
+#endif
+
+    std::string exe_dir = get_executable_dir();
+
+    if (!exe_dir.empty()) {
+        // Walk up 0..3 parent directories, looking for
+        // tools/graphviz/bin/dot at each level.  This covers:
+        //   <exe_dir>/tools/...                (exe sits in repo root)
+        //   <exe_dir>/../tools/...             (exe one level down)
+        //   <exe_dir>/../../tools/...          (MyVSYosys/x64/)
+        //   <exe_dir>/../../../tools/...       (MyVSYosys/x64/Debug/)
+        std::string base = exe_dir;
+        for (int level = 0; level < 4; level++) {
+            std::string p = base + sep + "tools" + sep + "graphviz"
+                          + sep + "bin" + sep + dot_name;
+            if (path_exists(p))
+                return quote_path(p);
+            base += sep;
+            base += "..";
+        }
+    }
+
+    // Priority 3: explicit override
+    if (const char *env = std::getenv("MYIR_DOT")) {
+        if (env[0] && path_exists(env))
+            return quote_path(env);
+    }
+
+    // Priority 4: system PATH
+#if defined(_WIN32)
+    int rc = std::system("where dot > NUL 2>&1");
+#else
+    int rc = std::system("command -v dot >/dev/null 2>&1");
+#endif
+    if (rc == 0)
+        return std::string("dot");
+
+    return std::string();
+}
+
+std::string make_open_cmd(const std::string &file)
+{
+    std::string qf = quote_path(file);
+#if defined(_WIN32)
+    // 'start' is a cmd.exe built-in; first "" is the window-title
+    // placeholder so that paths with spaces are not mis-parsed as a title.
+    return std::string("cmd /c start \"\" ") + qf;
+#elif defined(__APPLE__)
+    return std::string("open ") + qf;
+#else
+    return std::string("xdg-open ") + qf + " >/dev/null 2>&1 &";
+#endif
 }
 
 } // namespace MyIR

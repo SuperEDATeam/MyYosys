@@ -392,6 +392,16 @@
     <ClCompile Include="..\yosys\passes\techmap\techmap.cc" />
     <ClCompile Include="..\yosys\passes\techmap\tribuf.cc" />
     <ClCompile Include="..\yosys\passes\techmap\zinit.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_import.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_export.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_dump.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_show.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_share.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_clean.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_const.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_ast_import.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_view.cc" />
     <ClCompile Include="..\yosys\passes\tests\test_abcloop.cc" />
     <ClCompile Include="..\yosys\passes\tests\test_autotb.cc" />
     <ClCompile Include="..\yosys\passes\tests\test_cell.cc" />
@@ -433,6 +443,7 @@
     <ClCompile Include="..\yosys\techlibs\xilinx\xilinx_dffopt.cc" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\yosys\passes\myir\myir.h" />
     <ClInclude Include="..\yosys\backends\rtlil\rtlil_backend.h" />
     <ClInclude Include="..\yosys\frontends\aiger\aigerparse.h" />
     <ClInclude Include="..\yosys\frontends\ast\ast.h" />

@@ -1,9 +1,4 @@
-.vs/
-*.exe
-*.dll
-*.pdb
-bin/
-obj/
+﻿.vs/
 Debug/
-Release/
-*.md
+*.vcxproj.user
+

@@ -1,4 +1,4 @@
-/*
+﻿/*
  *  yosys -- Yosys Open SYnthesis Suite
  *
  *  Copyright (C) 2012  Claire Xenia Wolf <claire@yosyshq.com>
@@ -36,6 +36,10 @@
 #if defined(_WIN32)
 #  include <windows.h>
 #  include <io.h>
+#  include <direct.h>
+#  ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#    define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#  endif
 #elif defined(__APPLE__)
 #  include <mach-o/dyld.h>
 #  include <unistd.h>
@@ -136,26 +140,123 @@ void memhasher_do()
 
 void yosys_banner()
 {
+	char cwd[4096];
+#if defined(_WIN32)
+	SetConsoleOutputCP(CP_UTF8);
+	wchar_t wcwd[4096];
+	if (GetCurrentDirectoryW(4096, wcwd) != 0) {
+		WideCharToMultiByte(CP_UTF8, 0, wcwd, -1, cwd, sizeof(cwd), NULL, NULL);
+	} else {
+		strcpy(cwd, ".");
+	}
+#else
+	if (getcwd(cwd, sizeof(cwd)) == NULL)
+		strcpy(cwd, ".");
+#endif
+
+	char cwd_display[64];
+	size_t cwd_len = strlen(cwd);
+	if (cwd_len > 55) {
+		snprintf(cwd_display, sizeof(cwd_display), "...%s", cwd + cwd_len - 52);
+	} else {
+		snprintf(cwd_display, sizeof(cwd_display), "%s", cwd);
+	}
+
+	const char *cyan = "\033[96m";
+	const char *blue = "\033[94m";
+	const char *green = "\033[92m";
+	const char *yellow = "\033[93m";
+	const char *bold = "\033[1m";
+	const char *reset = "\033[0m";
+
+	// Falling stars animation
+	{
+		const int anim_h = 8;
+		const int num_stars = 18;
+		int star_x[num_stars] = {4, 12, 20, 28, 36, 44, 52, 60, 68, 76, 8, 24, 40, 56, 72, 16, 32, 48};
+		int star_y[num_stars] = {-1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -13, -14, -15, -16, -17, -18};
+		const char *star_ch[num_stars] = {"*", "*", "*", "*", "*", "*", "*", "*", "*", "*", "+", "+", "+", "+", "+", "+", "+", "+"};
+		for (int frame = 0; frame < 28; frame++) {
+			if (frame > 0) {
+				for (int i = 0; i < anim_h; i++) fprintf(stdout, "\033[A");
+				fprintf(stdout, "\033[J");
+			}
+			char canvas[anim_h][81];
+			for (int y = 0; y < anim_h; y++) {
+				memset(canvas[y], ' ', 80);
+				canvas[y][80] = '\0';
+			}
+			for (int s = 0; s < num_stars; s++) {
+				star_y[s]++;
+				int y = star_y[s];
+				if (y >= 0 && y < anim_h && star_x[s] >= 0 && star_x[s] < 80)
+					canvas[y][star_x[s]] = star_ch[s][0];
+			}
+			for (int y = 0; y < anim_h; y++) {
+				int end = 79;
+				while (end >= 0 && canvas[y][end] == ' ') end--;
+				canvas[y][end + 1] = '\0';
+				fprintf(stdout, "%s%s%s\n", yellow, canvas[y], reset);
+			}
+			fflush(stdout);
+#if defined(_WIN32)
+			Sleep(80);
+#else
+			usleep(80000);
+#endif
+		}
+		for (int i = 0; i < anim_h; i++) fprintf(stdout, "\033[A");
+		fprintf(stdout, "\033[J");
+	}
+
 	log("\n");
-	log(" /----------------------------------------------------------------------------\\\n");
-	log(" |                                                                            |\n");
-	log(" |  yosys -- Yosys Open SYnthesis Suite                                       |\n");
-	log(" |                                                                            |\n");
-	log(" |  Copyright (C) 2012 - 2020  Claire Xenia Wolf <claire@yosyshq.com>         |\n");
-	log(" |                                                                            |\n");
-	log(" |  Permission to use, copy, modify, and/or distribute this software for any  |\n");
-	log(" |  purpose with or without fee is hereby granted, provided that the above    |\n");
-	log(" |  copyright notice and this permission notice appear in all copies.         |\n");
-	log(" |                                                                            |\n");
-	log(" |  THE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES  |\n");
-	log(" |  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF          |\n");
-	log(" |  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR   |\n");
-	log(" |  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES    |\n");
-	log(" |  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN     |\n");
-	log(" |  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF   |\n");
-	log(" |  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.            |\n");
-	log(" |                                                                            |\n");
-	log(" \\----------------------------------------------------------------------------/\n");
+	log("%s+==============================================================================+%s\n", cyan, reset);
+	log("%s|                                                                              |%s\n", cyan, reset);
+	log("%s|   %s%-71s%s    |%s\n", cyan, bold, "#   # #   # #   #  ###  #   #  ###   ###  #   #  ###  ", reset, cyan, reset);
+	log("%s|   %s%-71s%s    |%s\n", cyan, bold, "## ##.#.  #.#.  #.# ..# #.  #.# ..# # ..# #.  #.# ..# ", reset, cyan, reset);
+	log("%s|   %s%-71s%s    |%s\n", cyan, bold, "#.# #.#.  #.#.  #.#.   .#.  #.#.  #.#.   .#.  #.#.   .", reset, cyan, reset);
+	log("%s|   %s%-71s%s    |%s\n", cyan, bold, "#. .#. # # .#.  #. ###   # # .#.  #. ###   # # . ###  ", reset, cyan, reset);
+	log("%s|   %s%-71s%s    |%s\n", cyan, bold, "#.  #.  # .  # # .  ..#   # . #.  #.  ..#   # .   ..# ", reset, cyan, reset);
+	log("%s|   %s%-71s%s    |%s\n", cyan, bold, "#.  #.  #.    # . #   #.  #.  #.  #.#   #.  #.  #   #.", reset, cyan, reset);
+	log("%s|   %s%-71s%s    |%s\n", cyan, bold, "#.  #.  #.    #.   ### .  #.   ### . ### .  #.   ### .", reset, cyan, reset);
+	log("%s|   %s%-71s%s    |%s\n", cyan, bold, " .   .   .     .    ...    .    ...   ...    .    ... ", reset, cyan, reset);
+	log("%s|                                                                              |%s\n", cyan, reset);
+	log("%s|      Visual Studio Port of Yosys Open SYnthesis Suite                        |%s\n", cyan, reset, cyan, reset);
+	log("%s|                                                                              |%s\n", cyan, reset);
+	log("%s+------------------------------------------------------------------------------+%s\n", cyan, reset);
+	log("%s|                                                                              |%s\n", cyan, reset);
+	log("%s|   %sDirectory :%s %-61s%s|%s\n", cyan, cyan, reset, cwd_display, cyan, reset);
+	log("%s|   %sVersion   :%s %-61s%s|%s\n", cyan, cyan, reset, yosys_version_str, cyan, reset);
+	log("%s|                                                                              |%s\n", cyan, reset);
+	log("%s|   %sTip:%s Type %s'help'%s for help information.                               |%s\n", cyan, bold, reset, bold, reset, cyan, reset);
+	log("%s|                                                                              |%s\n", cyan, reset);
+	log("%s|   This software is open-source under the ISC License.                        |%s\n", cyan, reset, cyan, reset);
+	log("%s|   Copyright (C) 2012-2020 Claire Xenia Wolf & Contributors.                  |%s\n", cyan, reset, cyan, reset);
+	log("%s|                                                                              |%s\n", cyan, reset);
+	log("%s+==============================================================================+%s\n", cyan, reset);
+
+	// Cute startup animation (direct stdout for terminal eye-candy only)
+	log("\n");
+	const char *faces[] = {"(o_o)", "(O_O)", "(-_-)", "(^_^)"};
+	const char *face_colors[] = {blue, cyan, green, yellow};
+	const char *msgs[] = {
+		"Loading system kernel...",
+		"Mounting frontend modules...",
+		"Calibrating synthesis engine...",
+		"Preparing interactive shell..."
+	};
+	for (int i = 0; i < 4; i++) {
+		fprintf(stdout, "  %s%s%s  %s", face_colors[i], faces[i], reset, msgs[i]);
+		fflush(stdout);
+#if defined(_WIN32)
+		Sleep(120);
+#else
+		usleep(120000);
+#endif
+		fprintf(stdout, "\n");
+	}
+	log("  %s(^_^)%s  System initialization complete. Welcome aboard!               \n", green, reset);
+
 	log("\n");
 	log(" %s\n", yosys_version_str);
 	log("\n");

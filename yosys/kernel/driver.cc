@@ -38,6 +38,13 @@
 #endif
 #include <inttypes.h>
 
+#if defined (_WIN32)
+#  include <windows.h>
+#  ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#    define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#  endif
+#endif
+
 #if defined (__linux__) || defined(__FreeBSD__)
 #  include <sys/resource.h>
 #  include <sys/types.h>
@@ -229,6 +236,18 @@ namespace Yosys {
 
 int main(int argc, char **argv)
 {
+#if defined(_WIN32)
+	SetConsoleOutputCP(CP_UTF8);
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hOut != INVALID_HANDLE_VALUE) {
+		DWORD dwMode = 0;
+		if (GetConsoleMode(hOut, &dwMode)) {
+			dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+			SetConsoleMode(hOut, dwMode);
+		}
+	}
+#endif
+
 	std::string frontend_command = "auto";
 	std::string backend_command = "auto";
 	std::vector<std::string> vlog_defines;

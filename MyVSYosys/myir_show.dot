@@ -1,0 +1,21 @@
+digraph "_carry" {
+  rankdir=LR;
+  label="carry";
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontsize=8];
+
+  "w__a" [label="a\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__b" [label="b\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__c" [label="c\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__cout" [label="cout\n1 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+  "w__x" [label="x\n1 bit", shape=ellipse];
+
+  "e_0" [label="And", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__a" -> "e_0";
+  "w__b" -> "e_0";
+  "e_0" -> "w__x";
+  "e_1" [label="Or", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__x" -> "e_1";
+  "w__c" -> "e_1";
+  "e_1" -> "w__cout";
+}

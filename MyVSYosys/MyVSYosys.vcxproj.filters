@@ -1,0 +1,1238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="源文件">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="头文件">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="资源文件">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\yosys\backends\aiger\aiger.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\aiger\xaiger.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\blif\blif.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\btor\btor.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\cxxrtl\cxxrtl_backend.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\edif\edif.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\firrtl\firrtl.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\intersynth\intersynth.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\jny\jny.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\json\json.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\rtlil\rtlil_backend.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\simplec\simplec.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\smt2\smt2.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\smv\smv.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\spice\spice.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\table\table.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\backends\verilog\verilog_backend.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\aiger\aigerparse.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\ast\ast.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\ast\ast_binding.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\ast\dpicall.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\ast\genrtlil.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\ast\simplify.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\blif\blifparse.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\json\jsonparse.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\liberty\liberty.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\rpc\rpc_frontend.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\rtlil\rtlil_frontend.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\rtlil\rtlil_lexer.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\rtlil\rtlil_parser.tab.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\verific\verific.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\verilog\const2ast.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\verilog\preproc.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\verilog\verilog_frontend.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\verilog\verilog_lexer.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\frontends\verilog\verilog_parser.tab.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\binding.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\calc.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\cellaigs.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\celledges.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\driver.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\ff.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\ffmerge.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\fmt.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\fstdata.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\json.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\log.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\mem.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\qcsat.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\register.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\rtlil.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\satgen.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\scopeinfo.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\version.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\yosys.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\kernel\yw.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\bigint\BigInteger.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\bigint\BigIntegerAlgorithms.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\bigint\BigIntegerUtils.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\bigint\BigUnsigned.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\bigint\BigUnsignedInABase.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\ezsat\ezminisat.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\ezsat\ezsat.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\fst\fastlz.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\fst\fstapi.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\fst\lz4.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\json11\json11.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\minisat\Options.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\minisat\SimpSolver.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\minisat\Solver.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\minisat\System.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\sha1\sha1.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\subcircuit\subcircuit.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\adler32.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\compress.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\crc32.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\deflate.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\gzclose.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\gzlib.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\gzread.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\gzwrite.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\infback.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\inffast.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\inflate.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\inftrees.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\trees.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\uncompr.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\libs\zlib\zutil.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\add.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\autoname.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\blackbox.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\bugpoint.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\check.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\chformal.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\chtype.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\clean_zerowidth.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\connect.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\connwrappers.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\copy.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\cover.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\delete.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\design.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\dft_tag.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\edgetypes.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\exec.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\future.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\glift.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\logcmd.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\logger.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\ltp.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\plugin.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\portlist.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\printattrs.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\qwp.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\rename.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\scatter.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\scc.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\scratchpad.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\select.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\setattr.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\setundef.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\show.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\splice.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\splitcells.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\splitnets.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\sta.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\stat.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\tee.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\torder.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\trace.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\viz.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\write_file.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\cmds\xprop.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\equiv\equiv_add.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\equiv\equiv_induct.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\equiv\equiv_make.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\equiv\equiv_mark.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\equiv\equiv_miter.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\equiv\equiv_opt.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\equiv\equiv_purge.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\equiv\equiv_remove.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\equiv\equiv_simple.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\equiv\equiv_status.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\equiv\equiv_struct.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\fsm\fsm.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\fsm\fsm_detect.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\fsm\fsm_expand.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\fsm\fsm_export.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\fsm\fsm_extract.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\fsm\fsm_info.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\fsm\fsm_map.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\fsm\fsm_opt.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\fsm\fsm_recode.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\hierarchy\hierarchy.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\hierarchy\submod.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\hierarchy\uniquify.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memlib.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory_bmux2rom.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory_bram.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory_collect.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory_dff.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory_libmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory_map.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory_memx.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory_narrow.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory_nordff.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory_share.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\memory\memory_unpack.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\muxpack.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_clean.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_demorgan.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_dff.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_expr.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_ffinv.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_lut.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_lut_ins.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_mem.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_mem_feedback.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_mem_priority.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_mem_widen.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_merge.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_muxtree.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_reduce.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\opt_share.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\pmux2shiftx.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\rmports.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\share.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\opt\wreduce.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\pmgen\ice40_dsp.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\pmgen\ice40_wrapcarry.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\pmgen\peepopt.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\pmgen\test_pmgen.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\pmgen\xilinx_dsp.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\pmgen\xilinx_srl.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\proc\proc.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\proc\proc_arst.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\proc\proc_clean.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\proc\proc_dff.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\proc\proc_dlatch.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\proc\proc_init.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\proc\proc_memwr.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\proc\proc_mux.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\proc\proc_prune.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\proc\proc_rmdead.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\proc\proc_rom.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\assertpmux.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\async2sync.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\clk2fflogic.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\cutpoint.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\eval.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\expose.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\fmcombine.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\fminit.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\formalff.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\freduce.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\miter.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\mutate.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\qbfsat.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\recover_names.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\sat.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\sim.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\supercover.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\sat\synthprop.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\abc.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\abc9.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\abc9_exe.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\abc9_ops.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\aigmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\alumacc.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\attrmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\attrmvcp.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\bmuxmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\booth.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\bwmuxmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\clkbufmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\deminout.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\demuxmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\dffinit.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\dfflegalize.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\dfflibmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\dffunmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\extract.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\extractinv.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\extract_counter.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\extract_fa.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\extract_reduce.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\flatten.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\flowmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\hilomap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\insbuf.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\iopadmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\libparse.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\lut2mux.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\maccmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\muxcover.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\nlutmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\pmuxtree.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\shregmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\simplemap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\techmap.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\tribuf.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\techmap\zinit.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_import.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_export.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_dump.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_show.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_share.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_clean.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_const.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_ast_import.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_view.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\tests\test_abcloop.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\tests\test_autotb.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\tests\test_cell.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\achronix\synth_achronix.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\anlogic\anlogic_eqn.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\anlogic\anlogic_fixcarry.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\anlogic\synth_anlogic.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\common\prep.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\common\synth.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\coolrunner2\coolrunner2_fixup.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\coolrunner2\coolrunner2_sop.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\coolrunner2\synth_coolrunner2.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\easic\synth_easic.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\ecp5\synth_ecp5.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\efinix\efinix_fixcarry.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\efinix\synth_efinix.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\fabulous\synth_fabulous.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\gatemate\gatemate_foldinv.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\gatemate\synth_gatemate.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\gowin\synth_gowin.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\greenpak4\greenpak4_dffinv.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\greenpak4\synth_greenpak4.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\ice40\ice40_braminit.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\ice40\ice40_opt.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\ice40\synth_ice40.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\intel\synth_intel.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\intel_alm\synth_intel_alm.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\lattice\lattice_gsr.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\lattice\synth_lattice.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\nexus\synth_nexus.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\quicklogic\ql_bram_merge.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\quicklogic\ql_bram_types.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\quicklogic\ql_dsp_io_regs.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\quicklogic\ql_dsp_macc.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\quicklogic\ql_dsp_simd.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\quicklogic\synth_quicklogic.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\sf2\synth_sf2.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\xilinx\synth_xilinx.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\techlibs\xilinx\xilinx_dffopt.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\yosys\passes\myir\myir.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\backends\rtlil\rtlil_backend.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\frontends\aiger\aigerparse.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\frontends\ast\ast.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\frontends\ast\ast_binding.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\frontends\blif\blifparse.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\frontends\rtlil\rtlil_frontend.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\frontends\rtlil\rtlil_parser.tab.hh">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\frontends\verific\verific.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\frontends\verilog\preproc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\frontends\verilog\verilog_frontend.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\frontends\verilog\verilog_parser.tab.hh">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\binding.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\bitpattern.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\cellaigs.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\celledges.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\celltypes.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\consteval.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\cost.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\ff.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\ffinit.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\ffmerge.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\fmt.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\fstdata.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\hashlib.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\json.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\log.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\macc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\mem.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\modtools.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\qcsat.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\register.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\rtlil.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\satgen.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\scopeinfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\sigtools.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\timinginfo.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\utils.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\yosys.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\kernel\yw.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\bigint\BigInteger.hh">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\bigint\BigIntegerAlgorithms.hh">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\bigint\BigIntegerLibrary.hh">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\bigint\BigIntegerUtils.hh">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\bigint\BigUnsigned.hh">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\bigint\BigUnsignedInABase.hh">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\bigint\NumberlikeArray.hh">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\ezsat\ezminisat.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\ezsat\ezsat.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\fst\config.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\fst\fastlz.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\fst\lz4.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\json11\json11.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\Alg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\Alloc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\Heap.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\IntMap.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\IntTypes.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\Map.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\Options.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\ParseUtils.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\Queue.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\SimpSolver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\Solver.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\SolverTypes.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\Sort.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\System.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\Vec.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\minisat\XAlloc.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\sha1\sha1.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\subcircuit\subcircuit.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\zlib\contrib\blast\blast.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\fsm\fsmdata.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\memory\memlib.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\pmgen\generate.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\pmgen\ice40_dsp_pm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\pmgen\ice40_wrapcarry_pm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\pmgen\peepopt_pm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\pmgen\test_pmgen_pm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\pmgen\xilinx_dsp48a_pm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\pmgen\xilinx_dsp_cascade_pm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\pmgen\xilinx_dsp_CREG_pm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\pmgen\xilinx_dsp_pm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\pmgen\xilinx_srl_pm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\sat\qbfsat.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\techmap\libparse.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\passes\techmap\simplemap.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\techlibs\quicklogic\ql_dsp_macc_pm.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\yosys\libs\fst\fstapi.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\yosys\kernel\constids.inc">
+      <Filter>头文件</Filter>
+    </None>
+    <None Include="..\yosys\techlibs\common\simcells_help.inc">
+      <Filter>头文件</Filter>
+    </None>
+    <None Include="..\yosys\techlibs\common\simlib_help.inc">
+      <Filter>头文件</Filter>
+    </None>
+  </ItemGroup>
+</Project>

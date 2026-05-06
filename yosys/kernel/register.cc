@@ -301,8 +301,22 @@ void Pass::call(RTLIL::Design *design, std::vector<std::string> args)
 
 	if (echo_mode) {
 		log("%s", create_prompt(design, 0));
-		for (size_t i = 0; i < args.size(); i++)
-			log("%s%s", i ? " " : "", args[i].c_str());
+		const char *green = "\033[92m";
+		const char *yellow = "\033[93m";
+		const char *cyan = "\033[96m";
+		const char *reset = "\033[0m";
+		for (size_t i = 0; i < args.size(); i++) {
+			log("%s", i ? " " : "");
+			if (i == 0)
+				log("%s%s%s", green, args[i].c_str(), reset);
+			else if (args[i].compare(0, 1, "-") == 0)
+				log("%s%s%s", yellow, args[i].c_str(), reset);
+			else if (args[i].find("/") != std::string::npos || args[i].find("\\") != std::string::npos || 
+					 args[i].find(".") != std::string::npos)
+				log("%s%s%s", cyan, args[i].c_str(), reset);
+			else
+				log("%s", args[i].c_str());
+		}
 		log("\n");
 	}
 
@@ -869,8 +883,14 @@ struct HelpPass : public Pass {
 	{
 		if (args.size() == 1) {
 			log("\n");
-			for (auto &it : pass_register)
-				log("    %-20s %s\n", it.first.c_str(), it.second->short_help.c_str());
+			const char *cyan = "\033[96m";
+			const char *reset = "\033[0m";
+			for (auto &it : pass_register) {
+				if (it.first.compare(0, 4, "myir") == 0)
+					log("    %s%-20s%s %s\n", cyan, it.first.c_str(), reset, it.second->short_help.c_str());
+				else
+					log("    %-20s %s\n", it.first.c_str(), it.second->short_help.c_str());
+			}
 			log("\n");
 			log("Type 'help <command>' for more information on a command.\n");
 			log("Type 'help -cells' for a list of all cell types.\n");

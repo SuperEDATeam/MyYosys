@@ -3,7 +3,7 @@ read_verilog passes/myir/tests/rewrite_test.v
 myir_import
 echo "=== Before myir_rewrite ==="
 myir_dump
-myir_rewrite
+myir_rewrite -k 4
 echo "=== After myir_rewrite ==="
 myir_dump
 myir_opt_clean

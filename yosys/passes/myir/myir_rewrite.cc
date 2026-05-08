@@ -19,6 +19,7 @@ enum class RewriteKind { Redirect, Factor };
 struct RewriteCandidate {
     RewriteKind kind = RewriteKind::Redirect;
     std::string rule_name;
+    int score = 0;
     int root_idx = -1;
     int lhs_idx = -1;
     int rhs_idx = -1;
@@ -145,30 +146,35 @@ static bool is_not_of(const MyIR::Module &m,
     return true;
 }
 
-static std::string cut_key(const std::set<std::string> &leaves)
+static std::string cut_key(const CutInfo &cut)
 {
     std::string key;
     bool first = true;
-    for (const auto &leaf : leaves) {
+    for (const auto &leaf : cut.leaves) {
         if (!first)
             key += "|";
         key += leaf;
         first = false;
     }
+
+    key += "#";
+    first = true;
+    for (int node : cut.nodes) {
+        if (!first)
+            key += "|";
+        key += std::to_string(node);
+        first = false;
+    }
+
     return key;
 }
 
 static void append_unique_cut(std::vector<CutInfo> &cuts, const CutInfo &cut)
 {
-    std::string key = cut_key(cut.leaves);
-    for (auto &existing : cuts) {
-        if (cut_key(existing.leaves) != key)
-            continue;
-
-        if (cut.nodes.size() < existing.nodes.size())
-            existing = cut;
-        return;
-    }
+    std::string key = cut_key(cut);
+    for (const auto &existing : cuts)
+        if (cut_key(existing) == key)
+            return;
 
     cuts.push_back(cut);
 }
@@ -240,6 +246,16 @@ static std::map<int, std::vector<CutInfo>> enumerate_all_cuts(
     for (int i = 0; i < (int)m.exprs.size(); i++)
         enumerate_cuts_rec(i, m, k, producer, memo);
     return memo;
+}
+
+static int count_removed_muxes(const MyIR::Module &m, const std::set<int> &nodes)
+{
+    int removed_muxes = 0;
+    for (int idx : nodes)
+        if (idx >= 0 && idx < (int)m.exprs.size() &&
+            m.exprs[idx].op == MyIR::OpType::Mux)
+            removed_muxes++;
+    return removed_muxes;
 }
 
 static int count_total_cuts(const std::map<int, std::vector<CutInfo>> &all_cuts)
@@ -335,6 +351,8 @@ static bool try_factor_rule(const MyIR::Module &m, int idx, int k,
     cand.common = common;
     cand.lhs_other = lhs_other;
     cand.rhs_other = rhs_other;
+    cand.score = MyIR::transform_benefit_score(
+        3, count_removed_muxes(m, {idx, lhs_idx, rhs_idx}), 2, 1);
     return true;
 }
 
@@ -386,6 +404,8 @@ static bool try_absorption_rule(const MyIR::Module &m, int idx,
         cand.cut = cut;
         cand.remove_nodes = {idx, nested_idx};
         cand.redirect_target = direct;
+        cand.score = MyIR::transform_benefit_score(
+            2, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
         return true;
     }
 
@@ -411,6 +431,8 @@ static bool try_idempotent_rule(const MyIR::Module &m, int idx,
     cand.cut = cut;
     cand.remove_nodes = {idx};
     cand.redirect_target = root.operands[0];
+    cand.score = MyIR::transform_benefit_score(
+        1, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
     return true;
 }
 
@@ -435,6 +457,8 @@ static bool try_xor_self_rule(const MyIR::Module &m, int idx,
     cand.redirect_target = root.op == MyIR::OpType::Xor
         ? MyIR::uint_to_const(0, root.result_width)
         : make_allones_const(root.result_width);
+    cand.score = MyIR::transform_benefit_score(
+        1, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
     return true;
 }
 
@@ -470,6 +494,8 @@ static bool try_not_not_rule(const MyIR::Module &m, int idx,
     cand.cut = cut;
     cand.remove_nodes = {idx, child_idx};
     cand.redirect_target = child.operands[0];
+    cand.score = MyIR::transform_benefit_score(
+        2, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
     return true;
 }
 
@@ -492,6 +518,8 @@ static bool try_const_rule(const MyIR::Module &m, int idx,
             cand.cut = cut;
             cand.remove_nodes = {idx};
             cand.redirect_target = MyIR::uint_to_const(0, width);
+            cand.score = MyIR::transform_benefit_score(
+                1, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
             return true;
         }
         if (is_allones_const(a, width) && !MyIR::is_constant_name(b)) {
@@ -501,6 +529,8 @@ static bool try_const_rule(const MyIR::Module &m, int idx,
             cand.cut = cut;
             cand.remove_nodes = {idx};
             cand.redirect_target = b;
+            cand.score = MyIR::transform_benefit_score(
+                1, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
             return true;
         }
         if (is_allones_const(b, width) && !MyIR::is_constant_name(a)) {
@@ -510,6 +540,8 @@ static bool try_const_rule(const MyIR::Module &m, int idx,
             cand.cut = cut;
             cand.remove_nodes = {idx};
             cand.redirect_target = a;
+            cand.score = MyIR::transform_benefit_score(
+                1, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
             return true;
         }
     }
@@ -522,6 +554,8 @@ static bool try_const_rule(const MyIR::Module &m, int idx,
             cand.cut = cut;
             cand.remove_nodes = {idx};
             cand.redirect_target = make_allones_const(width);
+            cand.score = MyIR::transform_benefit_score(
+                1, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
             return true;
         }
         if (is_zero_const(a, width) && !MyIR::is_constant_name(b)) {
@@ -531,6 +565,8 @@ static bool try_const_rule(const MyIR::Module &m, int idx,
             cand.cut = cut;
             cand.remove_nodes = {idx};
             cand.redirect_target = b;
+            cand.score = MyIR::transform_benefit_score(
+                1, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
             return true;
         }
         if (is_zero_const(b, width) && !MyIR::is_constant_name(a)) {
@@ -540,6 +576,8 @@ static bool try_const_rule(const MyIR::Module &m, int idx,
             cand.cut = cut;
             cand.remove_nodes = {idx};
             cand.redirect_target = a;
+            cand.score = MyIR::transform_benefit_score(
+                1, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
             return true;
         }
     }
@@ -552,6 +590,8 @@ static bool try_const_rule(const MyIR::Module &m, int idx,
             cand.cut = cut;
             cand.remove_nodes = {idx};
             cand.redirect_target = b;
+            cand.score = MyIR::transform_benefit_score(
+                1, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
             return true;
         }
         if (is_zero_const(b, width) && !MyIR::is_constant_name(a)) {
@@ -561,6 +601,8 @@ static bool try_const_rule(const MyIR::Module &m, int idx,
             cand.cut = cut;
             cand.remove_nodes = {idx};
             cand.redirect_target = a;
+            cand.score = MyIR::transform_benefit_score(
+                1, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
             return true;
         }
     }
@@ -603,6 +645,8 @@ static bool try_demorgan_rule(const MyIR::Module &m, int idx,
     cand.common.clear();
     cand.lhs_other = a;
     cand.rhs_other = b;
+    cand.score = MyIR::transform_benefit_score(
+        3, count_removed_muxes(m, {idx, na_idx, nb_idx}), 2, 1);
     return true;
 }
 
@@ -665,6 +709,8 @@ static bool try_consensus_rule(const MyIR::Module &m, int idx,
             cand.common.clear();
             cand.lhs_other = x;
             cand.rhs_other = y;
+            cand.score = MyIR::transform_benefit_score(
+                3, count_removed_muxes(m, {idx, not_idx, nested_idx}), 2, 1);
             return true;
         }
 
@@ -701,6 +747,8 @@ static bool try_consensus_rule(const MyIR::Module &m, int idx,
             cand.common.clear();
             cand.lhs_other = x;
             cand.rhs_other = y;
+            cand.score = MyIR::transform_benefit_score(
+                3, count_removed_muxes(m, {idx, not_idx, nested_idx}), 2, 1);
             return true;
         }
     }
@@ -751,6 +799,8 @@ static bool try_consensus_rule(const MyIR::Module &m, int idx,
                     cand.cut = cut;
                     cand.remove_nodes = {idx, lhs_idx, rhs_idx, not_idx};
                     cand.redirect_target = y;
+                    cand.score = MyIR::transform_benefit_score(
+                        4, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
                     return true;
                 }
             }
@@ -784,6 +834,8 @@ static bool try_consensus_rule(const MyIR::Module &m, int idx,
                     cand.cut = cut;
                     cand.remove_nodes = {idx, lhs_idx, rhs_idx, not_idx};
                     cand.redirect_target = y;
+                    cand.score = MyIR::transform_benefit_score(
+                        4, count_removed_muxes(m, cand.remove_nodes), 0, 0, 1);
                     return true;
                 }
             }
@@ -800,6 +852,9 @@ static bool find_rewrite_candidate(
     const std::map<int, std::vector<CutInfo>> &all_cuts,
     RewriteCandidate &cand)
 {
+    bool found = false;
+    RewriteCandidate best;
+
     for (int idx = 0; idx < (int)m.exprs.size(); idx++)
     {
         auto cut_it = all_cuts.find(idx);
@@ -812,26 +867,30 @@ static bool find_rewrite_candidate(
             if ((int)cut.leaves.size() > k)
                 continue;
 
-            if (try_demorgan_rule(m, idx, producer, uses, cut, cand))
-                return true;
-            if (try_consensus_rule(m, idx, producer, uses, cut, cand))
-                return true;
-            if (try_factor_rule(m, idx, k, producer, uses, cut, cand))
-                return true;
-            if (try_absorption_rule(m, idx, producer, uses, cut, cand))
-                return true;
-            if (try_not_not_rule(m, idx, producer, uses, cut, cand))
-                return true;
-            if (try_idempotent_rule(m, idx, cut, cand))
-                return true;
-            if (try_xor_self_rule(m, idx, cut, cand))
-                return true;
-            if (try_const_rule(m, idx, cut, cand))
-                return true;
+            RewriteCandidate current;
+            bool matched =
+                try_demorgan_rule(m, idx, producer, uses, cut, current) ||
+                try_consensus_rule(m, idx, producer, uses, cut, current) ||
+                try_factor_rule(m, idx, k, producer, uses, cut, current) ||
+                try_absorption_rule(m, idx, producer, uses, cut, current) ||
+                try_not_not_rule(m, idx, producer, uses, cut, current) ||
+                try_idempotent_rule(m, idx, cut, current) ||
+                try_xor_self_rule(m, idx, cut, current) ||
+                try_const_rule(m, idx, cut, current);
+
+            if (!matched || current.score <= 0)
+                continue;
+
+            if (!found || current.score > best.score) {
+                best = current;
+                found = true;
+            }
         }
     }
 
-    return false;
+    if (found)
+        cand = best;
+    return found;
 }
 
 static void apply_redirect_rewrite(MyIR::Module &m, const RewriteCandidate &cand)
@@ -858,6 +917,7 @@ static void apply_redirect_rewrite(MyIR::Module &m, const RewriteCandidate &cand
         m.name.c_str(),
         root.result_wire.c_str(),
         cand.redirect_target.c_str());
+    log("    benefit score = %d\n", cand.score);
 }
 
 static void apply_factor_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
@@ -914,6 +974,7 @@ static void apply_factor_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
             old_root.operands[0].c_str(),
             old_root.operands[1].c_str(),
             temp.c_str());
+        log("    benefit score = %d\n", cand.score);
         return;
     }
 
@@ -964,6 +1025,7 @@ static void apply_factor_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
             MyIR::optype_to_string(inner.op),
             cand.lhs_other.c_str(),
             cand.rhs_other.c_str());
+        log("    benefit score = %d\n", cand.score);
         return;
     }
 
@@ -1018,6 +1080,7 @@ static void apply_factor_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
         MyIR::optype_to_string(new_root.op),
         new_root.operands[0].c_str(),
         new_root.operands[1].c_str());
+    log("    benefit score = %d\n", cand.score);
 }
 
 static void apply_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
@@ -1066,9 +1129,10 @@ struct MyIRRewritePass : public Pass {
         log("  !!x                ->  x\n");
         log("  x & 0 / x | 0 / x & 1 / x | 1 / x ^ 0\n");
         log("\n");
-        log("The pass precomputes cuts up to k leaves, then applies the\n");
-        log("first matching local rewrite. The process is repeated until no\n");
-        log("further rule matches remain.\n");
+        log("The pass precomputes cuts up to k leaves, scores all matching\n");
+        log("local rewrites, and applies the highest-benefit positive\n");
+        log("candidate. The process is repeated until no more profitable\n");
+        log("rule matches remain.\n");
         log("\n");
     }
 

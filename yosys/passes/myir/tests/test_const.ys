@@ -1,0 +1,15 @@
+# Test chained constant propagation through connect aliases.
+read_verilog passes/myir/tests/const_test.v
+myir_import
+echo "=== Before myir_opt_const/myir_opt_expr ==="
+myir_dump
+myir_opt_const
+myir_opt_expr
+myir_opt_const
+echo "=== After myir_opt_const/myir_opt_expr ==="
+myir_dump
+myir_opt_clean
+echo "=== After myir_opt_clean ==="
+myir_dump
+myir_export
+write_verilog const_out.v

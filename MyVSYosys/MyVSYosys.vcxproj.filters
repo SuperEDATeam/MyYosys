@@ -831,6 +831,12 @@
     <ClCompile Include="..\yosys\passes\myir\myir_opt_const.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_muxtree.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_expr.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="..\yosys\passes\myir\myir_rewrite.cc">
       <Filter>源文件</Filter>
     </ClCompile>

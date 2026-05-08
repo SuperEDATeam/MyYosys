@@ -2,17 +2,18 @@
 module rewrite_test(
     a, b, c,
     y_factor, y_absorb, y_idem, y_xor, y_xnor, y_not, y_or0, y_and1,
-    y_demorgan, y_consensus, y_resub
+    y_demorgan, y_consensus, y_resub, y_deep_resub
 );
     input  a, b, c;
     output y_factor, y_absorb, y_idem, y_xor, y_xnor, y_not, y_or0, y_and1;
-    output y_demorgan, y_consensus, y_resub;
+    output y_demorgan, y_consensus, y_resub, y_deep_resub;
 
     wire ab, ac;
     wire and_absorb;
     wire nn0, n0;
     wire na, nb;
     wire xay, nxay;
+    wire nna, nnaxby;
 
     assign ab = a & b;
     assign ac = a & c;
@@ -41,4 +42,8 @@ module rewrite_test(
     assign y_consensus = xay | nxay;
 
     assign y_resub = a | nxay;
+
+    assign nna = ~na;
+    assign nnaxby = nna & b;
+    assign y_deep_resub = a | nnaxby;
 endmodule

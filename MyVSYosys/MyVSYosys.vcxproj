@@ -400,6 +400,8 @@
     <ClCompile Include="..\yosys\passes\myir\myir_opt_share.cc" />
     <ClCompile Include="..\yosys\passes\myir\myir_opt_clean.cc" />
     <ClCompile Include="..\yosys\passes\myir\myir_opt_const.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_muxtree.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_expr.cc" />
     <ClCompile Include="..\yosys\passes\myir\myir_rewrite.cc" />
     <ClCompile Include="..\yosys\passes\myir\myir_ast_import.cc" />
     <ClCompile Include="..\yosys\passes\myir\myir_view.cc" />

@@ -118,6 +118,9 @@ bool         is_constant_name(const std::string &name);
 uint64_t     const_to_uint(const std::string &name);
 int          const_width(const std::string &name);
 std::string  uint_to_const(uint64_t val, int width);
+int          transform_benefit_score(int removed_exprs, int removed_muxes,
+                                     int added_exprs, int added_wires,
+                                     int added_connects = 0);
 
 const char*  stmt_kind_str(Statement::Kind k);
 const char*  sens_type_str(SensItem::Type t);

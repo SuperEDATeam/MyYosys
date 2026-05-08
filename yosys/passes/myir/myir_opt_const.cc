@@ -1,90 +1,51 @@
 #include "kernel/yosys.h"
 #include "passes/myir/myir.h"
+#include <unordered_map>
 
 USING_YOSYS_NAMESPACE
 PRIVATE_NAMESPACE_BEGIN
 
-static bool all_const(const std::vector<std::string> &ops)
+static std::unordered_map<std::string, std::string>
+build_known_constants(const MyIR::Module &m)
 {
-    for (auto &o : ops)
-        if (!MyIR::is_constant_name(o))
-            return false;
-    return !ops.empty();
-}
+    std::unordered_map<std::string, std::string> known_consts;
+    bool changed = true;
 
-static std::string eval_expr(MyIR::OpType op,
-                              const std::vector<std::string> &operands,
-                              int result_width)
-{
-    uint64_t a = MyIR::const_to_uint(operands[0]);
-    uint64_t b = operands.size() >= 2 ? MyIR::const_to_uint(operands[1]) : 0;
-    uint64_t mask = result_width >= 64 ? ~0ULL
-                                       : ((1ULL << result_width) - 1);
-    uint64_t r = 0;
+    while (changed) {
+        changed = false;
 
-    switch (op) {
-    case MyIR::OpType::And:          r = a & b;                break;
-    case MyIR::OpType::Or:           r = a | b;                break;
-    case MyIR::OpType::Xor:          r = a ^ b;                break;
-    case MyIR::OpType::Xnor:         r = (~(a ^ b)) & mask;   break;
-    case MyIR::OpType::Not:          r = (~a) & mask;          break;
-    case MyIR::OpType::Eq:           r = (a == b) ? 1 : 0;    break;
-    case MyIR::OpType::Ne:           r = (a != b) ? 1 : 0;    break;
-    case MyIR::OpType::Lt:           r = (a <  b) ? 1 : 0;    break;
-    case MyIR::OpType::Le:           r = (a <= b) ? 1 : 0;    break;
-    case MyIR::OpType::Gt:           r = (a >  b) ? 1 : 0;    break;
-    case MyIR::OpType::Ge:           r = (a >= b) ? 1 : 0;    break;
-    case MyIR::OpType::Add:          r = (a + b) & mask;       break;
-    case MyIR::OpType::Sub:          r = (a - b) & mask;       break;
-    case MyIR::OpType::Mul:          r = (a * b) & mask;       break;
-    case MyIR::OpType::Buf:
-    case MyIR::OpType::Pos:          r = a & mask;             break;
-    case MyIR::OpType::Neg:          r = ((~a) + 1) & mask;    break;
-    case MyIR::OpType::Logic_And:    r = (a && b) ? 1 : 0;    break;
-    case MyIR::OpType::Logic_Or:     r = (a || b) ? 1 : 0;    break;
-    case MyIR::OpType::Logic_Not:    r = (!a) ? 1 : 0;        break;
-    case MyIR::OpType::Reduce_And: {
-        int aw = MyIR::const_width(operands[0]);
-        uint64_t amask = aw >= 64 ? ~0ULL : ((1ULL << aw) - 1);
-        r = (a == amask) ? 1 : 0;
-        break;
-    }
-    case MyIR::OpType::Reduce_Or:    r = (a != 0) ? 1 : 0;    break;
-    case MyIR::OpType::Reduce_Xor: {
-        uint64_t t = a;
-        r = 0;
-        while (t) { r ^= (t & 1); t >>= 1; }
-        break;
-    }
-    case MyIR::OpType::Shl:          r = (a << b) & mask;      break;
-    case MyIR::OpType::Shr:          r = (a >> b) & mask;      break;
-    case MyIR::OpType::Sshl:         r = (a << b) & mask;      break;
-    case MyIR::OpType::Sshr:         r = (a >> b) & mask;      break;
-    case MyIR::OpType::Mux: {
-        uint64_t s = operands.size() >= 3
-                         ? MyIR::const_to_uint(operands[2]) : 0;
-        r = (s & 1) ? b : a;
-        break;
-    }
-    default:
-        return "";
+        for (const auto &c : m.connects) {
+            std::string rhs = c.rhs;
+            auto rhs_it = known_consts.find(rhs);
+            if (rhs_it != known_consts.end())
+                rhs = rhs_it->second;
+
+            if (!MyIR::is_constant_name(rhs))
+                continue;
+
+            auto lhs_it = known_consts.find(c.lhs);
+            if (lhs_it == known_consts.end() || lhs_it->second != rhs) {
+                known_consts[c.lhs] = rhs;
+                changed = true;
+            }
+        }
     }
 
-    return MyIR::uint_to_const(r, result_width);
+    return known_consts;
 }
 
 struct MyIROptConstPass : public Pass {
     MyIROptConstPass() : Pass("myir_opt_const",
-        "constant propagation / folding on MyIR") {}
+        "constant propagation on MyIR") {}
 
     void help() override
     {
         log("\n");
         log("    myir_opt_const\n");
         log("\n");
-        log("Evaluate expressions whose operands are all constants and\n");
-        log("replace them with the computed constant value.  Also propagate\n");
-        log("constants through Buf / Pos / direct assigns.\n");
+        log("Propagate constants through direct MyIR assignments.\n");
+        log("This pass no longer performs expression folding; that logic is\n");
+        log("handled by myir_opt_expr.\n");
         log("\n");
     }
 
@@ -108,55 +69,35 @@ struct MyIROptConstPass : public Pass {
 
             while (changed) {
                 changed = false;
+                auto known_consts = build_known_constants(m);
 
-                // propagate constants through assigns
                 for (auto &c : m.connects) {
-                    if (MyIR::is_constant_name(c.rhs)) {
-                        for (auto &e : m.exprs)
-                            for (auto &op : e.operands)
-                                if (op == c.lhs) {
-                                    op = c.rhs;
-                                    changed = true;
-                                }
+                    auto rhs_it = known_consts.find(c.rhs);
+                    if (rhs_it != known_consts.end() && c.rhs != rhs_it->second) {
+                        log("  [opt_const] propagated %s -> %s through connect in module '%s'\n",
+                            c.rhs.c_str(), rhs_it->second.c_str(), m.name.c_str());
+                        c.rhs = rhs_it->second;
+                        total++;
+                        changed = true;
                     }
                 }
 
-                // fold constant expressions
-                std::vector<MyIR::Expr> new_exprs;
-                for (auto &e : m.exprs) {
-                    if (all_const(e.operands)) {
-                        std::string cval = eval_expr(e.op, e.operands,
-                                                     e.result_width);
-                        if (!cval.empty()) {
-                            log("  [opt_const] folded %s -> %s = %s\n",
-                                MyIR::optype_to_string(e.op),
-                                e.result_wire.c_str(), cval.c_str());
-
-                            // replace all uses of result_wire with the constant
-                            for (auto &e2 : m.exprs)
-                                for (auto &op : e2.operands)
-                                    if (op == e.result_wire) op = cval;
-                            for (auto &a : m.connects)
-                                if (a.rhs == e.result_wire) a.rhs = cval;
-
-                            // keep as assign so the wire retains its value
-                            MyIR::Assign ca;
-                            ca.lhs = e.result_wire;
-                            ca.rhs = cval;
-                            m.connects.push_back(ca);
-
-                            ++total;
-                            changed = true;
+                for (auto &e : m.exprs)
+                    for (auto &op : e.operands) {
+                        auto it = known_consts.find(op);
+                        if (it == known_consts.end() || op == it->second)
                             continue;
-                        }
+
+                        log("  [opt_const] propagated %s -> %s in module '%s'\n",
+                            op.c_str(), it->second.c_str(), m.name.c_str());
+                        op = it->second;
+                        total++;
+                        changed = true;
                     }
-                    new_exprs.push_back(e);
-                }
-                m.exprs = new_exprs;
             }
         }
 
-        log("  Folded %d constant expression(s).\n", total);
+        log("  Propagated %d constant operand substitution(s).\n", total);
     }
 } MyIROptConstPass;
 

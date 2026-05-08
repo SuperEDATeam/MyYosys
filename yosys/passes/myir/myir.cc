@@ -243,6 +243,17 @@ std::string uint_to_const(uint64_t val, int width) {
     return std::to_string(width) + "'" + bits;
 }
 
+int transform_benefit_score(int removed_exprs, int removed_muxes,
+                            int added_exprs, int added_wires,
+                            int added_connects)
+{
+    return 10 * removed_exprs
+         + 6 * removed_muxes
+         - 3 * added_exprs
+         - 1 * added_wires
+         - 1 * added_connects;
+}
+
 const char* stmt_kind_str(Statement::Kind k) {
     switch (k) {
     case Statement::Assign: return "assign";

@@ -837,6 +837,9 @@
     <ClCompile Include="..\yosys\passes\myir\myir_view.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_reliable.cc">
+      <Filter>æºæ–‡ä»¶</Filter>
+    </ClCompile>
     <ClCompile Include="..\yosys\passes\tests\test_abcloop.cc">
       <Filter>源文件</Filter>
     </ClCompile>

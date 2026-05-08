@@ -1,21 +1,35 @@
-digraph "_carry" {
+digraph "_test_opt" {
   rankdir=LR;
-  label="carry";
+  label="test_opt";
   node [fontname="Helvetica", fontsize=10];
   edge [fontsize=8];
 
+  "w__ast_t2" [label="ast_t2\n1 bit", shape=ellipse];
   "w__a" [label="a\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
   "w__b" [label="b\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
   "w__c" [label="c\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
-  "w__cout" [label="cout\n1 bit", shape=octagon, style=filled, fillcolor=lightyellow];
-  "w__x" [label="x\n1 bit", shape=ellipse];
+  "w__out1" [label="out1\n1 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+  "w__out2" [label="out2\n1 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+  "w__w1" [label="w1\n1 bit", shape=ellipse];
+  "w__w2" [label="w2\n1 bit", shape=ellipse];
+  "c_32'00000000000000000000000000000000" [label="32'00000000000000000000000000000000", shape=diamond, style=filled, fillcolor=lightgray];
+  "c_32'00000000000000000000000000000001" [label="32'00000000000000000000000000000001", shape=diamond, style=filled, fillcolor=lightgray];
 
   "e_0" [label="And", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
-  "w__a" -> "e_0";
+  "c_32'00000000000000000000000000000001" -> "e_0";
   "w__b" -> "e_0";
-  "e_0" -> "w__x";
-  "e_1" [label="Or", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
-  "w__x" -> "e_1";
-  "w__c" -> "e_1";
-  "e_1" -> "w__cout";
+  "e_0" -> "w__w1";
+  "e_1" [label="And", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "c_32'00000000000000000000000000000001" -> "e_1";
+  "w__b" -> "e_1";
+  "e_1" -> "w__w2";
+  "e_2" [label="And", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__c" -> "e_2";
+  "c_32'00000000000000000000000000000000" -> "e_2";
+  "e_2" -> "w__ast_t2";
+  "e_3" [label="Or", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__w1" -> "e_3";
+  "w__ast_t2" -> "e_3";
+  "e_3" -> "w__out1";
+  "w__w2" -> "w__out2" [style=dashed, color=gray];
 }

@@ -29,7 +29,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -297,6 +297,7 @@
     <ClCompile Include="..\yosys\passes\memory\memory_nordff.cc" />
     <ClCompile Include="..\yosys\passes\memory\memory_share.cc" />
     <ClCompile Include="..\yosys\passes\memory\memory_unpack.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_reliable.cc" />
     <ClCompile Include="..\yosys\passes\opt\muxpack.cc" />
     <ClCompile Include="..\yosys\passes\opt\opt.cc" />
     <ClCompile Include="..\yosys\passes\opt\opt_clean.cc" />

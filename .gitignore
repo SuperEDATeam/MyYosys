@@ -2,3 +2,9 @@
 Debug/
 *.vcxproj.user
 
+# Root-level documents and presentation assets are not tracked.
+# (SUMMARY/*.md is intentionally tracked -- only root-level *.md is ignored.)
+/*.md
+/*.ppt
+/*.pptx
+/*.png

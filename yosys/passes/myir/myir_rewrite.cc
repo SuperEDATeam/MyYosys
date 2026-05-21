@@ -1,5 +1,6 @@
 #include "kernel/yosys.h"
 #include "passes/myir/myir.h"
+#include <algorithm>
 #include <map>
 #include <set>
 #include <unordered_map>
@@ -12,6 +13,11 @@ namespace {
 struct CutInfo {
     std::set<std::string> leaves;
     std::set<int> nodes;
+};
+
+struct CutStats {
+    int peak_cuts_per_node = 0;
+    int truncated_nodes = 0;
 };
 
 enum class RewriteKind { Redirect, Factor };
@@ -199,10 +205,36 @@ static void combine_cut_options(const std::vector<std::vector<CutInfo>> &options
     }
 }
 
+// Sort cuts so that the "most useful" ones come first when we have to
+// truncate.  Heuristic: fewer leaves > fewer internal nodes > deterministic
+// tie-break on string key.
+static void rank_and_truncate(std::vector<CutInfo> &cuts,
+                              int max_cuts_per_node,
+                              CutStats &stats)
+{
+    if (max_cuts_per_node <= 0)
+        return;                          // 0 = unlimited
+    if ((int)cuts.size() <= max_cuts_per_node)
+        return;
+
+    std::sort(cuts.begin(), cuts.end(),
+              [](const CutInfo &a, const CutInfo &b) {
+                  if (a.leaves.size() != b.leaves.size())
+                      return a.leaves.size() < b.leaves.size();
+                  if (a.nodes.size() != b.nodes.size())
+                      return a.nodes.size() < b.nodes.size();
+                  return cut_key(a) < cut_key(b);
+              });
+
+    cuts.resize(max_cuts_per_node);
+    stats.truncated_nodes++;
+}
+
 static std::vector<CutInfo> enumerate_cuts_rec(
-    int idx, const MyIR::Module &m, int k,
+    int idx, const MyIR::Module &m, int k, int max_cuts_per_node,
     const std::unordered_map<std::string, int> &producer,
-    std::map<int, std::vector<CutInfo>> &memo)
+    std::map<int, std::vector<CutInfo>> &memo,
+    CutStats &stats)
 {
     auto memo_it = memo.find(idx);
     if (memo_it != memo.end())
@@ -221,7 +253,8 @@ static std::vector<CutInfo> enumerate_cuts_rec(
         auto prod_it = producer.find(operand);
         if (prod_it != producer.end()) {
             std::vector<CutInfo> child_cuts =
-                enumerate_cuts_rec(prod_it->second, m, k, producer, memo);
+                enumerate_cuts_rec(prod_it->second, m, k, max_cuts_per_node,
+                                   producer, memo, stats);
             opts.insert(opts.end(), child_cuts.begin(), child_cuts.end());
         }
 
@@ -234,17 +267,23 @@ static std::vector<CutInfo> enumerate_cuts_rec(
     for (auto &cut : cuts)
         cut.nodes.insert(idx);
 
+    rank_and_truncate(cuts, max_cuts_per_node, stats);
+
+    if ((int)cuts.size() > stats.peak_cuts_per_node)
+        stats.peak_cuts_per_node = (int)cuts.size();
+
     memo[idx] = cuts;
     return cuts;
 }
 
 static std::map<int, std::vector<CutInfo>> enumerate_all_cuts(
-    const MyIR::Module &m, int k,
-    const std::unordered_map<std::string, int> &producer)
+    const MyIR::Module &m, int k, int max_cuts_per_node,
+    const std::unordered_map<std::string, int> &producer,
+    CutStats &stats)
 {
     std::map<int, std::vector<CutInfo>> memo;
     for (int i = 0; i < (int)m.exprs.size(); i++)
-        enumerate_cuts_rec(i, m, k, producer, memo);
+        enumerate_cuts_rec(i, m, k, max_cuts_per_node, producer, memo, stats);
     return memo;
 }
 
@@ -1101,7 +1140,7 @@ struct MyIRRewritePass : public Pass {
     void help() override
     {
         log("\n");
-        log("    myir_rewrite [-k N]\n");
+        log("    myir_rewrite [-k N] [-max-cuts N] [-stats]\n");
         log("\n");
         log("Enumerate k-cuts for each MyIR expression and run local\n");
         log("pattern-based rewriting on the cuts.\n");
@@ -1110,6 +1149,15 @@ struct MyIRRewritePass : public Pass {
         log("    -k N\n");
         log("        Maximum number of distinct leaves allowed in a cut.\n");
         log("        Default: 4.\n");
+        log("\n");
+        log("    -max-cuts N\n");
+        log("        Cap the number of cuts kept per node at N.  Excess\n");
+        log("        cuts are dropped after ranking by (fewer leaves first,\n");
+        log("        then fewer internal nodes).  0 = unlimited.\n");
+        log("        Default: 16.\n");
+        log("\n");
+        log("    -stats\n");
+        log("        Also print per-rule hit counts in the summary log.\n");
         log("\n");
         log("Currently implemented rewrite rules:\n");
         log("  (a & b) | (a & c)  ->  a & (b | c)\n");
@@ -1141,11 +1189,21 @@ struct MyIRRewritePass : public Pass {
         log_header(design, "Executing myir_rewrite.\n");
 
         int k = 4;
+        int max_cuts_per_node = 16;
+        bool flag_stats = false;
         size_t argidx;
         for (argidx = 1; argidx < args.size(); argidx++)
         {
             if (args[argidx] == "-k" && argidx + 1 < args.size()) {
                 k = atoi(args[++argidx].c_str());
+                continue;
+            }
+            if (args[argidx] == "-max-cuts" && argidx + 1 < args.size()) {
+                max_cuts_per_node = atoi(args[++argidx].c_str());
+                continue;
+            }
+            if (args[argidx] == "-stats") {
+                flag_stats = true;
                 continue;
             }
             break;
@@ -1154,6 +1212,8 @@ struct MyIRRewritePass : public Pass {
 
         if (k < 2)
             log_error("myir_rewrite: -k must be >= 2.\n");
+        if (max_cuts_per_node < 0)
+            log_error("myir_rewrite: -max-cuts must be >= 0 (0 = unlimited).\n");
 
         MyIR::Design *myir = MyIR::get_design();
         if (!myir || myir->modules.empty()) {
@@ -1162,6 +1222,11 @@ struct MyIRRewritePass : public Pass {
         }
 
         int total = 0;
+        int total_iterations = 0;
+        long long total_cuts_enumerated = 0;
+        int max_peak_cuts = 0;
+        int total_truncated_nodes = 0;
+        std::map<std::string, int> rule_hits;
 
         for (auto &mkv : myir->modules)
         {
@@ -1169,24 +1234,46 @@ struct MyIRRewritePass : public Pass {
             int rewrite_counter = 0;
 
             while (true) {
+                total_iterations++;
                 auto producer = build_producer_map(m);
                 auto uses = build_use_count(m);
-                auto all_cuts = enumerate_all_cuts(m, k, producer);
+                CutStats stats;
+                auto all_cuts = enumerate_all_cuts(m, k, max_cuts_per_node,
+                                                   producer, stats);
+                int this_cuts = count_total_cuts(all_cuts);
+                total_cuts_enumerated += this_cuts;
+                if (stats.peak_cuts_per_node > max_peak_cuts)
+                    max_peak_cuts = stats.peak_cuts_per_node;
+                total_truncated_nodes += stats.truncated_nodes;
+
                 RewriteCandidate cand;
 
                 if (!find_rewrite_candidate(m, k, producer, uses, all_cuts, cand)) {
                     log("  [rewrite] module '%s': enumerated %d cut(s) with k=%d, "
                         "no more matches.\n",
-                        m.name.c_str(), count_total_cuts(all_cuts), k);
+                        m.name.c_str(), this_cuts, k);
                     break;
                 }
 
                 apply_rewrite(m, cand, rewrite_counter);
+                rule_hits[cand.rule_name]++;
                 total++;
             }
         }
 
-        log("  Applied %d rewrite(s).\n", total);
+        log("  myir_rewrite summary:\n");
+        log("    iterations            : %d\n", total_iterations);
+        log("    total cuts enumerated : %lld (peak per node = %d)\n",
+            total_cuts_enumerated, max_peak_cuts);
+        if (total_truncated_nodes > 0)
+            log("    cuts truncated by -max-cuts : %d node(s) hit the cap\n",
+                total_truncated_nodes);
+        log("    rewrites applied      : %d\n", total);
+        if (flag_stats && !rule_hits.empty()) {
+            log("    by rule:\n");
+            for (const auto &kv : rule_hits)
+                log("      %-22s : %d\n", kv.first.c_str(), kv.second);
+        }
     }
 } MyIRRewritePass;
 

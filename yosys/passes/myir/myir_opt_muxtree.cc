@@ -305,6 +305,10 @@ struct MyIROptMuxtreePass : public Pass {
         log("select expressions, and muxes with identical A/B inputs are\n");
         log("collapsed as well.\n");
         log("\n");
+        log("The 'benefit score' printed for each simplification is\n");
+        log("advisory only -- mux simplification is unconditionally\n");
+        log("profitable, so the score does NOT gate the rewrite.\n");
+        log("\n");
     }
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
@@ -320,6 +324,11 @@ struct MyIROptMuxtreePass : public Pass {
 
         int total_removed = 0;
         int total_mux_simplified = 0;
+        int total_root_muxes = 0;
+        int total_visits = 0;
+        int cnt_same = 0;     // identical A/B
+        int cnt_const = 0;    // constant select
+        int cnt_path = 0;     // path-condition dead branch
 
         for (auto &mkv : myir->modules)
         {
@@ -334,8 +343,12 @@ struct MyIROptMuxtreePass : public Pass {
                 auto roots = find_root_muxes(m, producer, connect_map);
                 std::map<int, BranchState> branch_states;
 
-                for (int root_idx : roots)
+                total_root_muxes += (int)roots.size();
+
+                for (int root_idx : roots) {
                     visit_mux_tree(m, root_idx, producer, connect_map, branch_states, ConditionState());
+                    total_visits++;
+                }
 
                 std::vector<MyIR::Expr> new_exprs;
                 new_exprs.reserve(m.exprs.size());
@@ -353,13 +366,16 @@ struct MyIROptMuxtreePass : public Pass {
                     int dead_branches = 0;
                     bool select_value = false;
                     int benefit_score = 0;
+                    const char *rule_name = nullptr;
 
                     if (expr.operands[0] == expr.operands[1]) {
                         chosen_rhs = expr.operands[0];
                         dead_branches = 1;
                         benefit_score = MyIR::transform_benefit_score(
                             1, 1, 0, 0, 1);
-                        remove_mux = benefit_score > 0;
+                        remove_mux = true;          // advisory: score >0 anyway
+                        rule_name = "same_inputs";
+                        cnt_same++;
                     } else if (infer_signal_value(m, producer, connect_map, ConditionState(),
                                                   expr.operands[2], select_value)) {
                         chosen_rhs = select_value
@@ -367,7 +383,9 @@ struct MyIROptMuxtreePass : public Pass {
                         dead_branches = 1;
                         benefit_score = MyIR::transform_benefit_score(
                             1, 1, 0, 0, 1);
-                        remove_mux = benefit_score > 0;
+                        remove_mux = true;
+                        rule_name = "const_sel";
+                        cnt_const++;
                     } else {
                         auto st_it = branch_states.find(i);
                         if (st_it != branch_states.end()) {
@@ -377,13 +395,17 @@ struct MyIROptMuxtreePass : public Pass {
                                 dead_branches = 1;
                                 benefit_score = MyIR::transform_benefit_score(
                                     1, 1, 0, 0, 1);
-                                remove_mux = benefit_score > 0;
+                                remove_mux = true;
+                                rule_name = "path_cond";
+                                cnt_path++;
                             } else if (!st.live_a && st.live_b) {
                                 chosen_rhs = expr.operands[1];
                                 dead_branches = 1;
                                 benefit_score = MyIR::transform_benefit_score(
                                     1, 1, 0, 0, 1);
-                                remove_mux = benefit_score > 0;
+                                remove_mux = true;
+                                rule_name = "path_cond";
+                                cnt_path++;
                             }
                         }
                     }
@@ -395,11 +417,12 @@ struct MyIROptMuxtreePass : public Pass {
                         m.connects.push_back(a);
 
                         log("  [opt_muxtree] module '%s': removed dead mux branch on %s, "
-                            "replaced with %s.\n",
+                            "replaced with %s (rule=%s).\n",
                             m.name.c_str(),
                             expr.result_wire.c_str(),
-                            chosen_rhs.c_str());
-                        log("    benefit score = %d\n", benefit_score);
+                            chosen_rhs.c_str(),
+                            rule_name ? rule_name : "?");
+                        log("    benefit score = %d (advisory)\n", benefit_score);
 
                         total_removed += dead_branches;
                         total_mux_simplified++;
@@ -413,8 +436,12 @@ struct MyIROptMuxtreePass : public Pass {
             }
         }
 
-        log("  Removed %d dead mux branch(es) across %d mux(es).\n",
-            total_removed, total_mux_simplified);
+        log("  myir_opt_muxtree summary:\n");
+        log("    root muxes discovered  : %d\n", total_root_muxes);
+        log("    mux-tree visits        : %d\n", total_visits);
+        log("    branches removed       : %d (same_inputs=%d / const_sel=%d / path_cond=%d)\n",
+            total_removed, cnt_same, cnt_const, cnt_path);
+        log("    muxes collapsed        : %d\n", total_mux_simplified);
     }
 } MyIROptMuxtreePass;
 

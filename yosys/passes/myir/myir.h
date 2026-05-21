@@ -118,6 +118,26 @@ bool         is_constant_name(const std::string &name);
 uint64_t     const_to_uint(const std::string &name);
 int          const_width(const std::string &name);
 std::string  uint_to_const(uint64_t val, int width);
+
+// Empirical benefit score for an IR transformation.
+//
+// Higher score = transformation is more profitable.  Used by the
+// myir_opt_expr / myir_opt_muxtree / myir_rewrite passes to pick
+// between competing rewrite candidates and to optionally guard
+// non-profitable rewrites (score <= 0).
+//
+// Coefficients (current values, tunable in myir.cc):
+//   removed_exprs    : +10  -- each removed Expr saves an RTLIL cell
+//   removed_muxes    :  +6  -- muxes are slightly cheaper to remove
+//                              than generic gates; weight kept below
+//                              removed_exprs to bias toward larger
+//                              rewrites
+//   added_exprs      :  -3  -- each newly introduced Expr costs less
+//                              than the cell it (typically) makes
+//                              cheaper downstream
+//   added_wires      :  -1  -- a fresh internal wire has marginal cost
+//   added_connects   :  -1  -- a new direct connect is roughly equal
+//                              to a wire
 int          transform_benefit_score(int removed_exprs, int removed_muxes,
                                      int added_exprs, int added_wires,
                                      int added_connects = 0);

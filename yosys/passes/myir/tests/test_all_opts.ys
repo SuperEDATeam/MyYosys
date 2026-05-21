@@ -1,0 +1,43 @@
+# Full optimisation pipeline on rewrite_test.v.
+#
+# This script demonstrates two equivalent ways to drive the MyIR
+# optimisation stack:
+#
+#   Usage A (recommended): one-shot via the new myir_opts command.
+#   Usage B (debug):       same chain spelled out by hand.
+#
+# Compare the two output dumps to verify they converge to the same IR.
+
+# ------------------------------------------------------------------
+# Usage A: one-shot via myir_opts.
+# ------------------------------------------------------------------
+read_verilog passes/myir/tests/rewrite_test.v
+myir_import
+
+echo "=== Initial IR ==="
+myir_dump
+
+echo "=== After myir_opts -fixpoint -stats -k 4 ==="
+myir_opts -fixpoint -stats -k 4
+myir_dump
+
+myir_export
+write_verilog all_opts_out.v
+
+# ------------------------------------------------------------------
+# Usage B: hand-written pipeline (reference / debug aid).
+# ------------------------------------------------------------------
+design -reset
+read_verilog passes/myir/tests/rewrite_test.v
+myir_import
+
+echo "=== Manual pipeline reference ==="
+myir_opt_const
+myir_opt_expr
+myir_opt_const
+myir_opt_muxtree
+myir_opt_expr
+myir_rewrite -k 4 -stats
+myir_opt_share
+myir_opt_clean
+myir_dump

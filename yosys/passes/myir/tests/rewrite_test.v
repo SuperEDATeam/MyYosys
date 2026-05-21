@@ -2,11 +2,13 @@
 module rewrite_test(
     a, b, c,
     y_factor, y_absorb, y_idem, y_xor, y_xnor, y_not, y_or0, y_and1,
-    y_demorgan, y_consensus, y_resub, y_deep_resub
+    y_demorgan, y_consensus, y_resub, y_deep_resub,
+    y_sub_self, y_or_comp, y_and_comp
 );
     input  a, b, c;
     output y_factor, y_absorb, y_idem, y_xor, y_xnor, y_not, y_or0, y_and1;
     output y_demorgan, y_consensus, y_resub, y_deep_resub;
+    output y_sub_self, y_or_comp, y_and_comp;
 
     wire ab, ac;
     wire and_absorb;
@@ -46,4 +48,12 @@ module rewrite_test(
     assign nna = ~na;
     assign nnaxby = nna & b;
     assign y_deep_resub = a | nnaxby;
+
+    // Complement rules added to exercise myir_opt_expr:
+    //   sub_self        : a - a       -> 0
+    //   or_complement   : a | ~a      -> all-ones
+    //   and_complement  : a & ~a      -> 0
+    assign y_sub_self  = a - a;
+    assign y_or_comp   = a |  ~a;
+    assign y_and_comp  = a &  ~a;
 endmodule

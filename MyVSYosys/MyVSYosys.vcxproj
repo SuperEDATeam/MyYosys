@@ -405,6 +405,7 @@
     <ClCompile Include="..\yosys\passes\myir\myir_rewrite.cc" />
     <ClCompile Include="..\yosys\passes\myir\myir_ast_import.cc" />
     <ClCompile Include="..\yosys\passes\myir\myir_view.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_opts.cc" />
     <ClCompile Include="..\yosys\passes\tests\test_abcloop.cc" />
     <ClCompile Include="..\yosys\passes\tests\test_autotb.cc" />
     <ClCompile Include="..\yosys\passes\tests\test_cell.cc" />

@@ -1,13 +1,13 @@
 # End-to-end test for AST-based MyIR import
 # Usage:  yosys < test_ast.ys
 
-echo "===== Test 1: Combinational logic (carry.v) via AST ====="
+log "===== Test 1: Combinational logic (carry.v) via AST ====="
 read_verilog passes/myir/tests/carry.v
 myir_ast_import
 myir_dump
 design -reset
 
-echo "===== Test 2: If/Else (mux_ifelse.v) via AST ====="
+log "===== Test 2: If/Else (mux_ifelse.v) via AST ====="
 read_verilog passes/myir/tests/mux_ifelse.v
 myir_ast_import
 myir_dump
@@ -16,7 +16,7 @@ myir_show -o mux_ifelse_ast.dot -fmt png
 # myir_view mux_ifelse_ast.png
 design -reset
 
-echo "===== Test 3: Case (mux_case.v) via AST ====="
+log "===== Test 3: Case (mux_case.v) via AST ====="
 read_verilog passes/myir/tests/mux_case.v
 myir_ast_import
 myir_dump
@@ -25,7 +25,7 @@ myir_show -o mux_case_ast.dot -fmt png
 # myir_show -o mux_case_ast.dot -fmt png -view
 design -reset
 
-echo "===== Test 4: DFF with async reset (dff_test.v) via AST ====="
+log "===== Test 4: DFF with async reset (dff_test.v) via AST ====="
 read_verilog passes/myir/tests/dff_test.v
 myir_ast_import
 myir_dump
@@ -33,13 +33,13 @@ myir_show -o dff_ar_ast.dot -fmt png
 # myir_view dff_ar_ast.png
 design -reset
 
-echo "===== Test 5: Compare AST vs RTLIL route (carry.v) ====="
+log "===== Test 5: Compare AST vs RTLIL route (carry.v) ====="
 read_verilog passes/myir/tests/carry.v
-echo "--- AST route ---"
+log "--- AST route ---"
 myir_ast_import
 myir_dump
-echo "--- RTLIL route ---"
+log "--- RTLIL route ---"
 myir_import
 myir_dump
 
-echo "===== All AST tests done! ====="
+log "===== All AST tests done! ====="

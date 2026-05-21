@@ -100,12 +100,32 @@ struct MyIRExportPass : public Pass {
                 RTLIL::Cell *cell = mod->addCell(RTLIL::IdString(cname),
                                                   RTLIL::IdString(celltype));
 
-                // Y port
+                // The $mux cell has a fundamentally different parameter
+                // schema: it only takes \WIDTH, NOT the
+                // A_/B_/Y_ (WIDTH | SIGNED) quadruple that the generic
+                // $-binary/$-unary cells expect.  Setting them anyway makes
+                // rtlil.cc:1091 reject the cell at the next pass.
+                if (expr.op == MyIR::OpType::Mux) {
+                    cell->setPort(ID::Y, name_to_sigspec(expr.result_wire, mod));
+                    if (expr.operands.size() >= 1)
+                        cell->setPort(ID::A,
+                                      name_to_sigspec(expr.operands[0], mod));
+                    if (expr.operands.size() >= 2)
+                        cell->setPort(ID::B,
+                                      name_to_sigspec(expr.operands[1], mod));
+                    if (expr.operands.size() >= 3)
+                        cell->setPort(ID::S,
+                                      name_to_sigspec(expr.operands[2], mod));
+                    cell->parameters[ID::WIDTH] = RTLIL::Const(expr.result_width);
+                    continue;
+                }
+
+                // Generic $-cell path (unary + binary): A/B/Y plus the
+                // matching *_WIDTH / *_SIGNED parameters.
                 RTLIL::SigSpec y = name_to_sigspec(expr.result_wire, mod);
                 cell->setPort(ID::Y, y);
                 cell->parameters[ID::Y_WIDTH] = RTLIL::Const(expr.result_width);
 
-                // A port
                 if (!expr.operands.empty()) {
                     RTLIL::SigSpec a = name_to_sigspec(expr.operands[0], mod);
                     cell->setPort(ID::A, a);
@@ -117,27 +137,15 @@ struct MyIRExportPass : public Pass {
                     cell->parameters[ID::A_SIGNED] = RTLIL::Const(a_signed ? 1 : 0);
                 }
 
-                if (expr.op == MyIR::OpType::Mux) {
-                    // B port (input when S=1)
-                    if (expr.operands.size() >= 2)
-                        cell->setPort(ID::B,
-                                      name_to_sigspec(expr.operands[1], mod));
-                    // S port (select)
-                    if (expr.operands.size() >= 3)
-                        cell->setPort(ID::S,
-                                      name_to_sigspec(expr.operands[2], mod));
-                    cell->parameters[ID::WIDTH] = RTLIL::Const(expr.result_width);
-                } else if (!is_unary(expr.op)) {
-                    if (expr.operands.size() >= 2) {
-                        RTLIL::SigSpec b = name_to_sigspec(expr.operands[1], mod);
-                        cell->setPort(ID::B, b);
-                        cell->parameters[ID::B_WIDTH] = RTLIL::Const(b.size());
+                if (!is_unary(expr.op) && expr.operands.size() >= 2) {
+                    RTLIL::SigSpec b = name_to_sigspec(expr.operands[1], mod);
+                    cell->setPort(ID::B, b);
+                    cell->parameters[ID::B_WIDTH] = RTLIL::Const(b.size());
 
-                        bool b_signed = false;
-                        auto bw = mymod.wires.find(expr.operands[1]);
-                        if (bw != mymod.wires.end()) b_signed = bw->second.is_signed;
-                        cell->parameters[ID::B_SIGNED] = RTLIL::Const(b_signed ? 1 : 0);
-                    }
+                    bool b_signed = false;
+                    auto bw = mymod.wires.find(expr.operands[1]);
+                    if (bw != mymod.wires.end()) b_signed = bw->second.is_signed;
+                    cell->parameters[ID::B_SIGNED] = RTLIL::Const(b_signed ? 1 : 0);
                 }
             }
 

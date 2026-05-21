@@ -14,10 +14,10 @@
 read_verilog passes/myir/tests/rewrite_test.v
 myir_import
 
-echo "=== Initial IR ==="
+log "=== Initial IR ==="
 myir_dump
 
-echo "=== After myir_opts -fixpoint -stats -k 4 ==="
+log "=== After myir_opts -fixpoint -stats -k 4 ==="
 myir_opts -fixpoint -stats -k 4
 myir_dump
 
@@ -31,7 +31,7 @@ design -reset
 read_verilog passes/myir/tests/rewrite_test.v
 myir_import
 
-echo "=== Manual pipeline reference ==="
+log "=== Manual pipeline reference ==="
 myir_opt_const
 myir_opt_expr
 myir_opt_const

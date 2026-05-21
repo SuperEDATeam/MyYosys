@@ -1,13 +1,13 @@
 # Test local rewrite optimisation
 read_verilog passes/myir/tests/rewrite_test.v
 myir_import
-echo "=== Before myir_rewrite ==="
+log "=== Before myir_rewrite ==="
 myir_dump
 myir_rewrite -k 4
-echo "=== After myir_rewrite ==="
+log "=== After myir_rewrite ==="
 myir_dump
 myir_opt_clean
-echo "=== After myir_opt_clean ==="
+log "=== After myir_opt_clean ==="
 myir_dump
 myir_export
 write_verilog rewrite_out.v

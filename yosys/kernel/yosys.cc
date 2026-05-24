@@ -29,6 +29,10 @@
 #  include <editline/readline.h>
 #endif
 
+#ifdef YOSYS_ENABLE_ISOCLINE
+#  include <isocline.h>
+#endif
+
 #ifdef YOSYS_ENABLE_PLUGINS
 #  include <dlfcn.h>
 #endif
@@ -1489,6 +1493,171 @@ static char **readline_completion(const char *text, int start, int)
 }
 #endif
 
+#ifdef YOSYS_ENABLE_ISOCLINE
+static void yosys_isocline_highlight(ic_highlight_env_t* henv, const char* input, void* arg)
+{
+	(void)arg;
+	static bool styles_defined = false;
+	if (!styles_defined) {
+		ic_style_def("yosys-cmd",   "#F9F1A5 bold");
+		ic_style_def("yosys-opt",   "#CCCCCC");
+		ic_style_def("yosys-str",   "#FFFFFF");
+		ic_style_def("yosys-cmt",   "#808080");
+		ic_style_def("yosys-num",   "#FFFFFF");
+		ic_style_def("yosys-punct", "#FFFFFF");
+		ic_style_def("yosys-plain", "#FFFFFF");
+		styles_defined = true;
+	}
+
+	long len = (long)strlen(input);
+	long i = 0;
+
+	while (i < len) {
+		if (input[i] == ' ' || input[i] == '\t') {
+			ic_highlight(henv, i, 1, "yosys-plain");
+			i++;
+			continue;
+		}
+
+		if (input[i] == '#') {
+			ic_highlight(henv, i, len - i, "yosys-cmt");
+			break;
+		}
+
+		if (input[i] == '"' || input[i] == '\'') {
+			char quote = input[i];
+			long j = i + 1;
+			while (j < len && input[j] != quote) {
+				if (input[j] == '\\') j++;
+				j++;
+			}
+			if (j < len) j++;
+			ic_highlight(henv, i, j - i, "yosys-str");
+			i = j;
+			continue;
+		}
+
+		long tok_start = i;
+		while (i < len && (isalnum((unsigned char)input[i]) || input[i] == '_' || input[i] == '-'))
+			i++;
+		long tok_len = i - tok_start;
+		if (tok_len == 0) {
+			ic_highlight(henv, i, 1, "yosys-punct");
+			i++;
+			continue;
+		}
+
+		std::string token(input + tok_start, tok_len);
+
+		bool is_first = true;
+		for (long k = 0; k < tok_start; k++) {
+			if (input[k] != ' ' && input[k] != '\t') {
+				is_first = false;
+				break;
+			}
+		}
+
+		if (is_first && (pass_register.count(token) || frontend_register.count(token) || backend_register.count(token))) {
+			ic_highlight(henv, tok_start, tok_len, "yosys-cmd");
+		}
+		else if (!token.empty() && token[0] == '-') {
+			ic_highlight(henv, tok_start, tok_len, "yosys-opt");
+		}
+		else if (std::all_of(token.begin(), token.end(), [](char c){ return isdigit((unsigned char)c); })) {
+			ic_highlight(henv, tok_start, tok_len, "yosys-num");
+		}
+		else {
+			ic_highlight(henv, tok_start, tok_len, "yosys-plain");
+		}
+	}
+}
+
+static void yosys_isocline_cmd_completer(ic_completion_env_t* cenv, const char* word)
+{
+	for (auto& it : pass_register) {
+		if (ic_istarts_with(it.first.c_str(), word))
+			ic_add_completion(cenv, it.first.c_str());
+	}
+	for (auto& it : frontend_register) {
+		if (ic_istarts_with(it.first.c_str(), word))
+			ic_add_completion(cenv, it.first.c_str());
+	}
+	for (auto& it : backend_register) {
+		if (ic_istarts_with(it.first.c_str(), word))
+			ic_add_completion(cenv, it.first.c_str());
+	}
+}
+
+static void yosys_isocline_obj_completer(ic_completion_env_t* cenv, const char* word)
+{
+	RTLIL::Design* design = yosys_get_design();
+	if (!design) return;
+	int wlen = (int)strlen(word);
+
+	if (design->selected_active_module.empty()) {
+		for (auto mod : design->modules()) {
+			std::string name = RTLIL::unescape_id(mod->name);
+			if ((int)name.size() >= wlen && name.compare(0, wlen, word) == 0)
+				ic_add_completion(cenv, name.c_str());
+		}
+	}
+	else if (design->module(design->selected_active_module) != nullptr) {
+		RTLIL::Module* module = design->module(design->selected_active_module);
+		for (auto w : module->wires()) {
+			std::string name = RTLIL::unescape_id(w->name);
+			if ((int)name.size() >= wlen && name.compare(0, wlen, word) == 0)
+				ic_add_completion(cenv, name.c_str());
+		}
+		for (auto& it : module->memories) {
+			std::string name = RTLIL::unescape_id(it.first);
+			if ((int)name.size() >= wlen && name.compare(0, wlen, word) == 0)
+				ic_add_completion(cenv, name.c_str());
+		}
+		for (auto cell : module->cells()) {
+			std::string name = RTLIL::unescape_id(cell->name);
+			if ((int)name.size() >= wlen && name.compare(0, wlen, word) == 0)
+				ic_add_completion(cenv, name.c_str());
+		}
+		for (auto& it : module->processes) {
+			std::string name = RTLIL::unescape_id(it.first);
+			if ((int)name.size() >= wlen && name.compare(0, wlen, word) == 0)
+				ic_add_completion(cenv, name.c_str());
+		}
+	}
+}
+
+static void yosys_isocline_completer(ic_completion_env_t* cenv, const char* input)
+{
+	long len = (long)strlen(input);
+	long word_start = len;
+
+	while (word_start > 0 && (input[word_start - 1] == ' ' || input[word_start - 1] == '\t'))
+		word_start--;
+
+	long ws = word_start;
+	while (ws > 0 && !(input[ws - 1] == ' ' || input[ws - 1] == '\t'))
+		ws--;
+
+	bool at_cmd_pos = true;
+	for (long i = 0; i < ws; i++) {
+		if (input[i] != ' ' && input[i] != '\t') {
+			at_cmd_pos = false;
+			break;
+		}
+	}
+
+	if (at_cmd_pos) {
+		ic_complete_word(cenv, input, &yosys_isocline_cmd_completer, NULL);
+	} else {
+		if (strncmp(input, "read_", 5) && strncmp(input, "write_", 6)) {
+			ic_complete_word(cenv, input, &yosys_isocline_obj_completer, NULL);
+		}
+	}
+
+	ic_complete_filename(cenv, input, '\\', NULL, NULL);
+}
+#endif
+
 void shell(RTLIL::Design *design)
 {
 	static int recursion_counter = 0;
@@ -1502,8 +1671,40 @@ void shell(RTLIL::Design *design)
 	rl_basic_word_break_characters = (char*)" \t\n";
 #endif
 
+#if defined(YOSYS_ENABLE_ISOCLINE)
+	static bool isocline_initialized = false;
+	if (!isocline_initialized) {
+		ic_set_default_highlighter(&yosys_isocline_highlight, NULL);
+		ic_set_default_completer(&yosys_isocline_completer, NULL);
+		ic_enable_auto_tab(true);
+		ic_enable_highlight(true);
+		ic_set_prompt_marker("", NULL);
+		isocline_initialized = true;
+	}
+#endif
+
 	char *command = NULL;
-#if defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
+#if defined(YOSYS_ENABLE_ISOCLINE)
+	static char ic_prompt[100];
+	{
+		std::string str;
+		if (recursion_counter > 1)
+			str += stringf("(%d) ", recursion_counter);
+		str += "yosys";
+		if (!design->selected_active_module.empty())
+			str += stringf(" [%s]", RTLIL::unescape_id(design->selected_active_module).c_str());
+		if (!design->selection_stack.empty() && !design->selection_stack.back().full_selection) {
+			if (design->selected_active_module.empty())
+				str += "*";
+			else if (design->selection_stack.back().selected_modules.size() != 1 || design->selection_stack.back().selected_members.size() != 0 ||
+					design->selection_stack.back().selected_modules.count(design->selected_active_module) == 0)
+				str += "*";
+		}
+		snprintf(ic_prompt, 100, "%s> ", str.c_str());
+	}
+	while ((command = ic_readline(ic_prompt)) != NULL)
+	{
+#elif defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
 	while ((command = readline(create_prompt(design, recursion_counter))) != NULL)
 	{
 #else
@@ -1516,7 +1717,9 @@ void shell(RTLIL::Design *design)
 			break;
 #endif
 		if (command[strspn(command, " \t\r\n")] == 0) {
-#if defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
+#if defined(YOSYS_ENABLE_ISOCLINE)
+			ic_free(command);
+#elif defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
 			free(command);
 #endif
 			continue;
@@ -1542,14 +1745,20 @@ void shell(RTLIL::Design *design)
 			log_reset_stack();
 		}
 		design->check();
-#if defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
+#if defined(YOSYS_ENABLE_ISOCLINE)
+		if (command)
+			ic_free(command);
+#elif defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
 		if (command)
 			free(command);
 #endif
 	}
 	if (command == NULL)
 		printf("exit\n");
-#if defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
+#if defined(YOSYS_ENABLE_ISOCLINE)
+	else
+		ic_free(command);
+#elif defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
 	else
 		free(command);
 #endif

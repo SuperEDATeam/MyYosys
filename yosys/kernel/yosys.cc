@@ -1500,9 +1500,9 @@ static void yosys_isocline_highlight(ic_highlight_env_t* henv, const char* input
 	static bool styles_defined = false;
 	if (!styles_defined) {
 		ic_style_def("yosys-cmd",   "#F9F1A5 bold");
-		ic_style_def("yosys-opt",   "#CCCCCC");
+		ic_style_def("yosys-opt",   "#999999");
 		ic_style_def("yosys-str",   "#FFFFFF");
-		ic_style_def("yosys-cmt",   "#808080");
+		ic_style_def("yosys-cmt",   "#6A9955");
 		ic_style_def("yosys-num",   "#FFFFFF");
 		ic_style_def("yosys-punct", "#FFFFFF");
 		ic_style_def("yosys-plain", "#FFFFFF");

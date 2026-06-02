@@ -978,6 +978,9 @@
     <ClCompile Include="..\yosys\techlibs\xilinx\xilinx_dffopt.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\yosys\libs\isocline\isocline.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\yosys\passes\myir\myir.h">

@@ -29,6 +29,10 @@
 #  include <editline/readline.h>
 #endif
 
+#ifdef YOSYS_ENABLE_ISOCLINE
+#  include <isocline.h>
+#endif
+
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
@@ -179,7 +183,7 @@ const char *prompt()
 
 #else /* EMSCRIPTEN */
 
-#if defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
+#if defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE) || defined(YOSYS_ENABLE_ISOCLINE)
 int yosys_history_offset = 0;
 std::string yosys_history_file;
 #endif
@@ -556,7 +560,7 @@ int main(int argc, char **argv)
 	if (print_banner)
 		yosys_banner();
 
-#if defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
+#if defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE) || defined(YOSYS_ENABLE_ISOCLINE)
 	std::string state_dir;
 	#if defined(_WIN32)
 		if (getenv("HOMEDRIVE") != NULL && getenv("HOMEPATH") != NULL) {
@@ -581,8 +585,13 @@ int main(int argc, char **argv)
 		create_directory(yosys_dir);
 
 		yosys_history_file = yosys_dir + "/history";
+	#if defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
 		read_history(yosys_history_file.c_str());
 		yosys_history_offset = where_history();
+	#endif
+	#if defined(YOSYS_ENABLE_ISOCLINE)
+		ic_set_history(yosys_history_file.c_str(), -1);
+	#endif
 	}
 #endif
 

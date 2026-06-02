@@ -36,6 +36,10 @@
 #  include <editline/readline.h>
 #endif
 
+#ifdef YOSYS_ENABLE_ISOCLINE
+#  include <isocline.h>
+#endif
+
 USING_YOSYS_NAMESPACE
 PRIVATE_NAMESPACE_BEGIN
 
@@ -1058,7 +1062,7 @@ struct VizPass : public Pass {
 		#endif
 
 		if (flag_pause) {
-		#ifdef YOSYS_ENABLE_READLINE
+		#if defined(YOSYS_ENABLE_READLINE) || defined(YOSYS_ENABLE_EDITLINE)
 			char *input = nullptr;
 			while ((input = readline("Press ENTER to continue (or type 'shell' to open a shell)> ")) != nullptr) {
 				if (input[strspn(input, " \t\r\n")] == 0)
@@ -1068,6 +1072,21 @@ struct VizPass : public Pass {
 					Pass::call(design, "shell");
 					break;
 				}
+			}
+		#elif defined(YOSYS_ENABLE_ISOCLINE)
+			char *input = nullptr;
+			while ((input = ic_readline("Press ENTER to continue (or type 'shell' to open a shell)> ")) != nullptr) {
+				if (input[strspn(input, " \t\r\n")] == 0) {
+					ic_free(input);
+					break;
+				}
+				char *p = input + strspn(input, " \t\r\n");
+				if (!strcmp(p, "shell")) {
+					ic_free(input);
+					Pass::call(design, "shell");
+					break;
+				}
+				ic_free(input);
 			}
 		#else
 			log_cmd_error("This version of yosys is built without readline support => 'show -pause' is not available.\n");

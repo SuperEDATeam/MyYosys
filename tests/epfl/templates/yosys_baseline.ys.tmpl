@@ -1,0 +1,18 @@
+# Yosys baseline pipeline template
+# Variables substituted at runtime (Python str.replace based):
+#   {INPUT}    -- benchmark .v path (forward slashes)
+#   {OUT_RTLIL}-- output RTLIL file (gold-side, for equiv)
+#   {OUT_V}    -- optimized Verilog file (for inspection)
+#   {STAT_OUT} -- file to capture 'stat' output verbatim
+#
+# Goal: synthesize using only Yosys native opt pipeline so we have a
+# fair "what Yosys can do on its own" baseline to compare MyIR against.
+
+read_verilog {INPUT}
+hierarchy -auto-top
+proc
+opt -full
+clean
+tee -o {STAT_OUT} stat
+write_rtlil {OUT_RTLIL}
+write_verilog {OUT_V}

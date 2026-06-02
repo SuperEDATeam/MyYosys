@@ -1,0 +1,23 @@
+# MyIR full pipeline template
+# Variables substituted at runtime:
+#   {INPUT}    -- benchmark .v path
+#   {OUT_RTLIL}-- output RTLIL (gate-side, for equiv)
+#   {OUT_V}    -- optimized Verilog
+#   {STAT_OUT} -- file to capture 'stat' output
+#
+# AST-route flow:
+#   read_verilog -> myir_ast_import -> myir_opts -fixpoint
+#       -> myir_export -> opt_clean -> stat -> write_*
+#
+# This is the primary route the EPFL comparison evaluates.
+
+read_verilog {INPUT}
+hierarchy -auto-top
+myir_ast_import
+myir_opts -fixpoint -stats
+myir_export
+proc
+opt_clean
+tee -o {STAT_OUT} stat
+write_rtlil {OUT_RTLIL}
+write_verilog {OUT_V}

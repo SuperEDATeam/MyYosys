@@ -1,0 +1,14 @@
+# Test Concat folding / flattening.
+read_verilog passes/myir/tests/concat_test.v
+myir_import
+log "=== Before myir_opt_concat ==="
+myir_dump
+myir_opt_concat
+log "=== After myir_opt_concat ==="
+myir_dump
+myir_opt_const
+myir_opt_clean
+log "=== After opt_const + opt_clean ==="
+myir_dump
+myir_export
+write_verilog concat_out.v

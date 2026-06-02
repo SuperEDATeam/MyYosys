@@ -849,6 +849,18 @@
     <ClCompile Include="..\yosys\passes\myir\myir_opts.cc">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_reliable.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_strength.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_compare.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_concat.cc">
+      <Filter>源文件</Filter>
+    </ClCompile>
     <ClCompile Include="..\yosys\passes\tests\test_abcloop.cc">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -964,9 +976,6 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="..\yosys\techlibs\xilinx\xilinx_dffopt.cc">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="myir_reliable.cc">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

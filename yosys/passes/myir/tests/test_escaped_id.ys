@@ -1,0 +1,34 @@
+# Verify escaped-identifier round-trip through the AST path.
+# This test asserts the N1+N2 invariants from the EPFL plan:
+#   - read_verilog -> myir_ast_import -> myir_export keeps names stable
+#   - the exported RTLIL is formally equivalent to the original AST
+
+log "===== Test: escaped identifier round-trip via AST ====="
+read_verilog passes/myir/tests/escaped_id_test.v
+
+# --- Gold path: original AST -> RTLIL ---
+design -save gold_src
+proc
+opt_clean
+design -save gold_post
+
+# --- Gate path: AST -> MyIR -> RTLIL ---
+design -reset
+design -load gold_src
+myir_ast_import
+myir_dump
+myir_export -strict
+proc
+opt_clean
+design -save gate_post
+
+# --- Formal equivalence check ---
+design -reset
+design -copy-from gold_post -as \gold top
+design -copy-from gate_post -as \gate top
+equiv_make \gold \gate \equiv
+equiv_simple \equiv
+equiv_induct \equiv
+equiv_status -assert \equiv
+
+log "===== escaped_id round-trip: PASS ====="

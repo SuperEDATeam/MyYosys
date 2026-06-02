@@ -406,6 +406,10 @@
     <ClCompile Include="..\yosys\passes\myir\myir_ast_import.cc" />
     <ClCompile Include="..\yosys\passes\myir\myir_view.cc" />
     <ClCompile Include="..\yosys\passes\myir\myir_opts.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_strength.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_compare.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_opt_concat.cc" />
+    <ClCompile Include="..\yosys\passes\myir\myir_reliable.cc" />
     <ClCompile Include="..\yosys\passes\tests\test_abcloop.cc" />
     <ClCompile Include="..\yosys\passes\tests\test_autotb.cc" />
     <ClCompile Include="..\yosys\passes\tests\test_cell.cc" />
@@ -445,7 +449,6 @@
     <ClCompile Include="..\yosys\techlibs\sf2\synth_sf2.cc" />
     <ClCompile Include="..\yosys\techlibs\xilinx\synth_xilinx.cc" />
     <ClCompile Include="..\yosys\techlibs\xilinx\xilinx_dffopt.cc" />
-    <ClCompile Include="myir_reliable.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\yosys\passes\myir\myir.h" />

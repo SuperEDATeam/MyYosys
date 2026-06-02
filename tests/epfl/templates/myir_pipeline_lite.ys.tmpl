@@ -1,0 +1,24 @@
+# MyIR "lite" pipeline -- avoids myir_rewrite (k-cut enumeration is
+# the single biggest cost on multi-thousand-cell benchmarks running
+# a Debug build).  Use with `--pipeline lite` on heavy benches.
+#
+# Variables substituted at runtime:
+#   {INPUT}    -- benchmark .v path
+#   {OUT_RTLIL}-- output RTLIL (gate-side, for equiv)
+#   {OUT_V}    -- optimized Verilog
+#   {STAT_OUT} -- stat capture file
+#
+# This still exercises the AST main path end-to-end and the bulk of
+# optimization (const + expr + muxtree + share + clean), only skipping
+# the algebraic rewriting layer.
+
+read_verilog {INPUT}
+hierarchy -auto-top
+myir_ast_import
+myir_opts -once -norewrite -stats
+myir_export
+proc
+opt_clean
+tee -o {STAT_OUT} stat
+write_rtlil {OUT_RTLIL}
+write_verilog {OUT_V}

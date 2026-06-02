@@ -1,0 +1,50 @@
+# EPFL combinational benchmark selection
+#
+# Paths are RELATIVE to the EPFL benchmark root.  By default,
+# run_compare.py looks for the benchmarks at
+#   tests/epfl/lsils_benchmarks/
+# (git submodule), but the --epfl-root CLI flag can point at any
+# local clone.
+#
+# Lines starting with '#' are ignored.
+# Lines starting with '!mtm' are ignored unless --include-mtm is
+# passed on the command line (MtM circuits have millions of gates
+# and are expected to OOM most laptops).
+#
+# Initial tier-1 set: small / medium combinational benchmarks
+# that the AST-route pipeline is expected to handle out of the box.
+
+# ---- random_control: simple decoders / control logic ----
+random_control/dec.v
+random_control/int2float.v
+random_control/ctrl.v
+random_control/cavlc.v
+
+# ---- random_control: medium-size ----
+random_control/priority.v
+random_control/router.v
+random_control/i2c.v
+
+# ---- arithmetic: classic ripple/carry style ----
+arithmetic/adder.v
+arithmetic/bar.v
+arithmetic/max.v
+
+# ---- arithmetic: heavier, optional (uncomment to enable) ----
+# arithmetic/multiplier.v
+# arithmetic/sin.v
+# arithmetic/log2.v
+# arithmetic/sqrt.v
+# arithmetic/div.v
+# arithmetic/hyp.v
+# arithmetic/square.v
+
+# ---- random_control: heavy ----
+# random_control/arbiter.v
+# random_control/voter.v
+# random_control/mem_ctrl.v
+
+# ---- MtM (10M+ gate) benchmarks, only with --include-mtm ----
+!mtm MtM/sixteen.v
+!mtm MtM/twenty.v
+!mtm MtM/twentythree.v

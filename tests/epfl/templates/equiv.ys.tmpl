@@ -1,0 +1,26 @@
+# Formal equivalence check template (combinational benchmarks).
+# Variables substituted at runtime:
+#   {GOLD_RTLIL}-- baseline Yosys RTLIL
+#   {GATE_RTLIL}-- MyIR-pipeline RTLIL
+#   {TOP}       -- top module name (Yosys-style, without leading backslash)
+#
+# EPFL combinational benchmarks have no flip-flops; equiv_simple
+# alone constitutes a complete proof.  equiv_induct is intended
+# for sequential designs with feedback and on multi-thousand-cell
+# combinational adders it can take 15+ minutes without adding any
+# new coverage, so we deliberately skip it here.
+
+read_rtlil {GOLD_RTLIL}
+rename {TOP} gold
+design -stash gold
+
+read_rtlil {GATE_RTLIL}
+rename {TOP} gate
+design -stash gate
+
+design -copy-from gold -as gold gold
+design -copy-from gate -as gate gate
+
+equiv_make gold gate equiv
+equiv_simple equiv
+equiv_status -assert equiv

@@ -1,0 +1,6 @@
+# This directory holds run_compare.py outputs:
+#   - <bench>/yosys.{v,rtlil,log,stat.txt}
+#   - <bench>/myir.{v,rtlil,log,stat.txt}
+#   - <bench>/equiv.log
+#   - epfl_results.csv
+#   - epfl_results.md

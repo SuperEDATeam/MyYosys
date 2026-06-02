@@ -205,6 +205,28 @@ int optype_num_inputs(OpType op) {
     }
 }
 
+bool op_returns_1bit(OpType op) {
+    switch (op) {
+    case OpType::Eq:
+    case OpType::Ne:
+    case OpType::Lt:
+    case OpType::Le:
+    case OpType::Gt:
+    case OpType::Ge:
+    case OpType::Reduce_And:
+    case OpType::Reduce_Or:
+    case OpType::Reduce_Xor:
+    case OpType::Reduce_Xnor:
+    case OpType::Reduce_Bool:
+    case OpType::Logic_And:
+    case OpType::Logic_Or:
+    case OpType::Logic_Not:
+        return true;
+    default:
+        return false;
+    }
+}
+
 // ----------------------------------------------------------------
 //  Constant literal helpers
 // ----------------------------------------------------------------

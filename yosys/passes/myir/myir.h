@@ -115,6 +115,15 @@ std::string  optype_to_celltype(OpType op);
 int          optype_num_inputs(OpType op);
 bool         is_constant_name(const std::string &name);
 
+// True when the RTLIL $-cell corresponding to this OpType always
+// produces a 1-bit Y output, regardless of the operand widths:
+//   - comparisons     (Eq/Ne/Lt/Le/Gt/Ge)
+//   - reductions      (Reduce_And/Or/Xor/Xnor/Bool)
+//   - logical ops     (Logic_And/Or/Not)
+// Used by myir_export to force Y_WIDTH = 1 on these cells regardless
+// of what result_width happens to carry in the MyIR Expr.
+bool         op_returns_1bit(OpType op);
+
 uint64_t     const_to_uint(const std::string &name);
 int          const_width(const std::string &name);
 std::string  uint_to_const(uint64_t val, int width);

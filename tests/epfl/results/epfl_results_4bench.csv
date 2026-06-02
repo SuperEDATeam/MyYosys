@@ -1,0 +1,5 @@
+bench,status,fail_stage,yosys_cells,myir_cells,ratio,yosys_wires,myir_wires,t_yosys_s,t_myir_s,t_equiv_s,equiv,notes
+dec,pass,,312,312,1.000,320,320,5.83,4.08,7.49,PASS,
+int2float,pass,,443,443,1.000,454,454,6.46,4.25,8.97,PASS,
+priority,pass,,1907,1907,1.000,2035,2035,16.49,8.44,320.17,PASS,
+adder,fail-equiv,equiv,2162,2162,1.000,2418,2418,17.97,9.00,900.03,FAIL,equiv rc=-1

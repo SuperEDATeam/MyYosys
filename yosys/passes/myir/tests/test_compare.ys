@@ -1,0 +1,16 @@
+# Test comparator simplification.
+read_verilog passes/myir/tests/compare_test.v
+myir_import
+log "=== Before myir_opt_compare ==="
+myir_dump
+myir_opt_compare
+log "=== After myir_opt_compare ==="
+myir_dump
+# Verify the cascading effect: the constant select now lets the mux collapse.
+myir_opt_muxtree
+myir_opt_const
+myir_opt_clean
+log "=== After muxtree + const + clean ==="
+myir_dump
+myir_export
+write_verilog compare_out.v

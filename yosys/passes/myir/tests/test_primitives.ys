@@ -1,0 +1,35 @@
+# Verify AST_PRIMITIVE handling (F2).
+# - import primitive-form Verilog
+# - dump the IR (for human inspection)
+# - export back to RTLIL with -strict
+# - compare against a gold path via equiv
+
+log "===== Test: Verilog primitive gates via AST ====="
+read_verilog passes/myir/tests/primitives_test.v
+design -save src
+
+# Gold path: standard Yosys lowering
+proc
+opt_clean
+design -save gold
+
+# Gate path: AST -> MyIR -> RTLIL
+design -reset
+design -load src
+myir_ast_import -strict
+myir_dump
+myir_export -strict
+proc
+opt_clean
+design -save gate
+
+# Equivalence
+design -reset
+design -copy-from gold -as \gold top
+design -copy-from gate -as \gate top
+equiv_make \gold \gate \equiv
+equiv_simple \equiv
+equiv_induct \equiv
+equiv_status -assert \equiv
+
+log "===== AST_PRIMITIVE round-trip: PASS ====="

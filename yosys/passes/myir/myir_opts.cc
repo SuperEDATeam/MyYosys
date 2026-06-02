@@ -8,15 +8,18 @@ PRIVATE_NAMESPACE_BEGIN
 namespace {
 
 struct OptsOptions {
-    bool fixpoint   = false;
-    bool stats      = false;
-    int  k          = -1;             // -1 = leave default
-    bool no_const   = false;
-    bool no_expr    = false;
-    bool no_muxtree = false;
-    bool no_rewrite = false;
-    bool no_share   = false;
-    bool no_clean   = false;
+    bool fixpoint    = false;
+    bool stats       = false;
+    int  k           = -1;             // -1 = leave default
+    bool no_const    = false;
+    bool no_expr     = false;
+    bool no_compare  = false;
+    bool no_strength = false;
+    bool no_concat   = false;
+    bool no_muxtree  = false;
+    bool no_rewrite  = false;
+    bool no_share    = false;
+    bool no_clean    = false;
 };
 
 // Compact summary of a MyIR design used to detect when an optimisation
@@ -42,6 +45,9 @@ static void run_one_round(RTLIL::Design *design, const OptsOptions &o)
 
     if (!o.no_const)    Pass::call(design, "myir_opt_const");
     if (!o.no_expr)     Pass::call(design, "myir_opt_expr");
+    if (!o.no_compare)  Pass::call(design, "myir_opt_compare");
+    if (!o.no_strength) Pass::call(design, "myir_opt_strength");
+    if (!o.no_concat)   Pass::call(design, "myir_opt_concat");
     if (!o.no_const)    Pass::call(design, "myir_opt_const");
     if (!o.no_muxtree)  Pass::call(design, "myir_opt_muxtree");
     if (!o.no_expr)     Pass::call(design, "myir_opt_expr");
@@ -60,11 +66,13 @@ struct MyIROptsPass : public Pass {
     {
         log("\n");
         log("    myir_opts [-once | -fixpoint] [-k N] [-stats]\n");
-        log("              [-noconst] [-noexpr] [-nomuxtree] [-norewrite]\n");
+        log("              [-noconst] [-noexpr] [-nocompare] [-nostrength]\n");
+        log("              [-noconcat] [-nomuxtree] [-norewrite]\n");
         log("              [-noshare] [-noclean]\n");
         log("\n");
         log("Run the standard MyIR optimisation pipeline:\n");
-        log("  myir_opt_const -> myir_opt_expr -> myir_opt_const\n");
+        log("  myir_opt_const -> myir_opt_expr -> myir_opt_compare\n");
+        log("  -> myir_opt_strength -> myir_opt_concat -> myir_opt_const\n");
         log("  -> myir_opt_muxtree -> myir_opt_expr -> myir_rewrite\n");
         log("  -> myir_opt_share -> myir_opt_clean\n");
         log("\n");
@@ -73,17 +81,20 @@ struct MyIROptsPass : public Pass {
         log("whichever comes first).\n");
         log("\n");
         log("Options:\n");
-        log("    -once       Run the pipeline exactly once (default).\n");
-        log("    -fixpoint   Iterate the pipeline up to 10 rounds, stopping\n");
-        log("                early when a round produces no IR change.\n");
-        log("    -k N        Forwarded to 'myir_rewrite -k N'.\n");
-        log("    -stats      Forwarded to 'myir_rewrite -stats'.\n");
-        log("    -noconst    Skip myir_opt_const.\n");
-        log("    -noexpr     Skip myir_opt_expr.\n");
-        log("    -nomuxtree  Skip myir_opt_muxtree.\n");
-        log("    -norewrite  Skip myir_rewrite.\n");
-        log("    -noshare    Skip myir_opt_share.\n");
-        log("    -noclean    Skip myir_opt_clean.\n");
+        log("    -once        Run the pipeline exactly once (default).\n");
+        log("    -fixpoint    Iterate the pipeline up to 10 rounds, stopping\n");
+        log("                 early when a round produces no IR change.\n");
+        log("    -k N         Forwarded to 'myir_rewrite -k N'.\n");
+        log("    -stats       Forwarded to 'myir_rewrite -stats'.\n");
+        log("    -noconst     Skip myir_opt_const.\n");
+        log("    -noexpr      Skip myir_opt_expr.\n");
+        log("    -nocompare   Skip myir_opt_compare.\n");
+        log("    -nostrength  Skip myir_opt_strength.\n");
+        log("    -noconcat    Skip myir_opt_concat.\n");
+        log("    -nomuxtree   Skip myir_opt_muxtree.\n");
+        log("    -norewrite   Skip myir_rewrite.\n");
+        log("    -noshare     Skip myir_opt_share.\n");
+        log("    -noclean     Skip myir_opt_clean.\n");
         log("\n");
         log("This is the recommended entry point for everyday use.  The\n");
         log("individual passes are still useful when debugging a specific\n");
@@ -103,12 +114,15 @@ struct MyIROptsPass : public Pass {
             if (a == "-once")       { o.fixpoint = false; continue; }
             if (a == "-fixpoint")   { o.fixpoint = true;  continue; }
             if (a == "-stats")      { o.stats    = true;  continue; }
-            if (a == "-noconst")    { o.no_const   = true; continue; }
-            if (a == "-noexpr")     { o.no_expr    = true; continue; }
-            if (a == "-nomuxtree")  { o.no_muxtree = true; continue; }
-            if (a == "-norewrite")  { o.no_rewrite = true; continue; }
-            if (a == "-noshare")    { o.no_share   = true; continue; }
-            if (a == "-noclean")    { o.no_clean   = true; continue; }
+            if (a == "-noconst")    { o.no_const    = true; continue; }
+            if (a == "-noexpr")     { o.no_expr     = true; continue; }
+            if (a == "-nocompare")  { o.no_compare  = true; continue; }
+            if (a == "-nostrength") { o.no_strength = true; continue; }
+            if (a == "-noconcat")   { o.no_concat   = true; continue; }
+            if (a == "-nomuxtree")  { o.no_muxtree  = true; continue; }
+            if (a == "-norewrite")  { o.no_rewrite  = true; continue; }
+            if (a == "-noshare")    { o.no_share    = true; continue; }
+            if (a == "-noclean")    { o.no_clean    = true; continue; }
             if (a == "-k" && argidx + 1 < args.size()) {
                 o.k = atoi(args[++argidx].c_str());
                 continue;

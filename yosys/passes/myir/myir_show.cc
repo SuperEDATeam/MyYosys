@@ -210,19 +210,19 @@ static void generate_dot(std::ostream &os, const MyIR::Module &m)
 }
 
 struct MyIRShowPass : public Pass {
-    MyIRShowPass() : Pass("myir_show",
+    MyIRShowPass() : Pass("iris_show",
         "generate DOT graph from MyIR design") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_show [-o <dotfile>] [-fmt <format>] [-view]\n");
+        log("    iris_show [-o <dotfile>] [-fmt <format>] [-view]\n");
         log("             [-viewer <cmd>] [-no-image]\n");
         log("\n");
         log("Generate a Graphviz DOT file and image for the current MyIR\n");
         log("design.\n");
         log("\n");
-        log("    -o <file>        write DOT to <file> (default: myir_show.dot)\n");
+        log("    -o <file>        write DOT to <file> (default: iris_show.dot)\n");
         log("    -fmt <format>    image format: png|pdf|svg (default: png)\n");
         log("    -view            open the image with the OS default\n");
         log("                     associated viewer after generation\n");
@@ -231,21 +231,21 @@ struct MyIRShowPass : public Pass {
         log("    -no-image        only write DOT; do not invoke Graphviz\n");
         log("\n");
         log("To open an already-generated file without regenerating it,\n");
-        log("use the 'myir_view' command.\n");
+        log("use the 'iris_view' command.\n");
         log("\n");
         log("Graphviz 'dot' is located in the following order:\n");
         log("  1. <exe_dir>/tools/graphviz/bin/dot(.exe) and up to 3\n");
         log("     parent directories (covers repo root for VS builds)\n");
-        log("  2. MYIR_DOT environment variable\n");
+        log("  2. IRIS_DOT environment variable\n");
         log("  3. system PATH\n");
         log("\n");
     }
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_show.\n");
+        log_header(design, "Executing iris_show.\n");
 
-        std::string dot_file = "myir_show.dot";
+        std::string dot_file = "iris_show.dot";
         std::string fmt      = "png";
         std::string viewer;
         bool flag_view     = false;
@@ -310,7 +310,7 @@ struct MyIRShowPass : public Pass {
         // -- 3) locate a usable 'dot' ---------------------------------------
         std::string dot_exe = MyIR::find_dot_executable();
         if (dot_exe.empty()) {
-            log_error("myir_show: Graphviz 'dot' command not found.\n"
+            log_error("iris_show: Graphviz 'dot' command not found.\n"
                       "  Option 1: Install Graphviz and add its 'bin' folder\n"
                       "            to PATH.  https://graphviz.org/download/\n"
                       "  Option 2: Extract a Graphviz portable build into\n"
@@ -319,9 +319,9 @@ struct MyIRShowPass : public Pass {
                       "            exists. (Also accepted: the same layout\n"
                       "            under the executable's own directory,\n"
                       "            or up to 3 parent directories above it.)\n"
-                      "  Option 3: Set the MYIR_DOT environment variable to\n"
+                      "  Option 3: Set the IRIS_DOT environment variable to\n"
                       "            the full path of dot(.exe).\n"
-                      "  (Use 'myir_show -no-image' to skip image generation\n"
+                      "  (Use 'iris_show -no-image' to skip image generation\n"
                       "   and produce only the .dot file.)\n");
             return; // log_error normally does not return, but keep for safety
         }
@@ -350,7 +350,7 @@ struct MyIRShowPass : public Pass {
             run_command(view_cmd);
         } else {
             log("  Use -view to open now, or run "
-                "'myir_view %s' later.\n", img_file.c_str());
+                "'iris_view %s' later.\n", img_file.c_str());
         }
     }
 } MyIRShowPass;

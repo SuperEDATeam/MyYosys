@@ -49,7 +49,7 @@ module rewrite_test(
     assign nnaxby = nna & b;
     assign y_deep_resub = a | nnaxby;
 
-    // Complement rules added to exercise myir_opt_expr:
+    // Complement rules added to exercise iris_opt_expr:
     //   sub_self        : a - a       -> 0
     //   or_complement   : a | ~a      -> all-ones
     //   and_complement  : a & ~a      -> 0

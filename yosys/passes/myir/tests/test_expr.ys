@@ -1,13 +1,13 @@
 # Test expression simplification
 read_verilog passes/myir/tests/expr_test.v
-myir_import
-log "=== Before myir_opt_expr ==="
-myir_dump
-myir_opt_expr
-log "=== After myir_opt_expr ==="
-myir_dump
-myir_opt_clean
-log "=== After myir_opt_clean ==="
-myir_dump
-myir_export
+iris_import
+log "=== Before iris_opt_expr ==="
+iris_dump
+iris_opt_expr
+log "=== After iris_opt_expr ==="
+iris_dump
+iris_opt_clean
+log "=== After iris_opt_clean ==="
+iris_dump
+iris_export
 write_verilog expr_out.v

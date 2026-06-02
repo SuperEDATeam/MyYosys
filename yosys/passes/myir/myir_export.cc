@@ -24,7 +24,7 @@ static RTLIL::SigSpec name_to_sigspec(const std::string &name,
     if (wire)
         return RTLIL::SigSpec(wire);
 
-    log_error("myir_export: wire '%s' not found in module '%s'.\n",
+    log_error("iris_export: wire '%s' not found in module '%s'.\n",
               name.c_str(), mod->name.c_str());
     return RTLIL::SigSpec();
 }
@@ -34,13 +34,13 @@ static bool is_unary(MyIR::OpType op) {
 }
 
 struct MyIRExportPass : public Pass {
-    MyIRExportPass() : Pass("myir_export",
+    MyIRExportPass() : Pass("iris_export",
         "convert MyIR representation back to RTLIL") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_export\n");
+        log("    iris_export\n");
         log("\n");
         log("Convert the current MyIR::Design back into RTLIL modules.\n");
         log("Existing RTLIL modules with the same names are replaced.\n");
@@ -49,12 +49,12 @@ struct MyIRExportPass : public Pass {
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_export.\n");
+        log_header(design, "Executing iris_export.\n");
         extra_args(args, 1, design);
 
         MyIR::Design *myir = MyIR::get_design();
         if (!myir || myir->modules.empty())
-            log_error("No MyIR design loaded. Run myir_import first.\n");
+            log_error("No MyIR design loaded. Run iris_import first.\n");
 
         for (auto &modkv : myir->modules)
         {

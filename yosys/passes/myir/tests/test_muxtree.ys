@@ -1,13 +1,13 @@
 # Test dead-branch elimination in mux trees
 read_verilog passes/myir/tests/muxtree_test.v
-myir_import
-log "=== Before myir_opt_muxtree ==="
-myir_dump
-myir_opt_muxtree
-log "=== After myir_opt_muxtree ==="
-myir_dump
-myir_opt_clean
-log "=== After myir_opt_clean ==="
-myir_dump
-myir_export
+iris_import
+log "=== Before iris_opt_muxtree ==="
+iris_dump
+iris_opt_muxtree
+log "=== After iris_opt_muxtree ==="
+iris_dump
+iris_opt_clean
+log "=== After iris_opt_clean ==="
+iris_dump
+iris_export
 write_verilog muxtree_out.v

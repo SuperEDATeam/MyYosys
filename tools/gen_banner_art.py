@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate 3D block-letter banner art for MYYOSYS (yosys_banner).
+Generate 3D block-letter banner art for IRIS (yosys_banner).
 
 Usage:
     python tools/gen_banner_art.py              # preview in terminal
@@ -16,7 +16,7 @@ import sys
 # All glyphs: 12×8 body + 1 padding row; double-stroke (##) block style.
 GW, GH = 12, 9
 LETTER_GAP = 1
-WORD = "MYYOSYS"
+WORD = "IRIS"
 MAX_VISIBLE_WIDTH = 92  # 7×12 + 6 gaps + 2px extrusion
 
 # Extrusion offsets (dx, dy) from back to front; last layer is the face.
@@ -27,6 +27,28 @@ EXTRUSION = [
 ]
 
 GLYPHS: dict[str, list[str]] = {
+    "I": [
+        "...######...",
+        "....####....",
+        ".....##.....",
+        ".....##.....",
+        ".....##.....",
+        ".....##.....",
+        ".....##.....",
+        "...######...",
+        "............",
+    ],
+    "R": [
+        "##########..",
+        "##......##..",
+        "##......##..",
+        "##########..",
+        "##..##......",
+        "##...##.....",
+        "##....##....",
+        "##.....##...",
+        "............",
+    ],
     "M": [
         "##........##",
         "###......###",
@@ -227,7 +249,7 @@ def emit_cc(lines: list[str], out_path: str | None = None) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate MYYOSYS 3D banner art")
+    parser = argparse.ArgumentParser(description="Generate IRIS 3D banner art")
     parser.add_argument("--emit-cc", action="store_true", help="Emit C log() lines")
     parser.add_argument(
         "-o",

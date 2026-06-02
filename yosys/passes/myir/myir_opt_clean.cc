@@ -6,13 +6,13 @@ USING_YOSYS_NAMESPACE
 PRIVATE_NAMESPACE_BEGIN
 
 struct MyIROptCleanPass : public Pass {
-    MyIROptCleanPass() : Pass("myir_opt_clean",
+    MyIROptCleanPass() : Pass("iris_opt_clean",
         "dead-code elimination on MyIR") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_opt_clean\n");
+        log("    iris_opt_clean\n");
         log("\n");
         log("Remove expressions whose result wires are never referenced by\n");
         log("any other expression, connection, or output port.  The\n");
@@ -22,7 +22,7 @@ struct MyIROptCleanPass : public Pass {
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_opt_clean.\n");
+        log_header(design, "Executing iris_opt_clean.\n");
         extra_args(args, 1, design);
 
         MyIR::Design *myir = MyIR::get_design();

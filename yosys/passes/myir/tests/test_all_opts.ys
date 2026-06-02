@@ -3,25 +3,25 @@
 # This script demonstrates two equivalent ways to drive the MyIR
 # optimisation stack:
 #
-#   Usage A (recommended): one-shot via the new myir_opts command.
+#   Usage A (recommended): one-shot via the new iris_opts command.
 #   Usage B (debug):       same chain spelled out by hand.
 #
 # Compare the two output dumps to verify they converge to the same IR.
 
 # ------------------------------------------------------------------
-# Usage A: one-shot via myir_opts.
+# Usage A: one-shot via iris_opts.
 # ------------------------------------------------------------------
 read_verilog passes/myir/tests/rewrite_test.v
-myir_import
+iris_import
 
 log "=== Initial IR ==="
-myir_dump
+iris_dump
 
-log "=== After myir_opts -fixpoint -stats -k 4 ==="
-myir_opts -fixpoint -stats -k 4
-myir_dump
+log "=== After iris_opts -fixpoint -stats -k 4 ==="
+iris_opts -fixpoint -stats -k 4
+iris_dump
 
-myir_export
+iris_export
 write_verilog all_opts_out.v
 
 # ------------------------------------------------------------------
@@ -29,15 +29,15 @@ write_verilog all_opts_out.v
 # ------------------------------------------------------------------
 design -reset
 read_verilog passes/myir/tests/rewrite_test.v
-myir_import
+iris_import
 
 log "=== Manual pipeline reference ==="
-myir_opt_const
-myir_opt_expr
-myir_opt_const
-myir_opt_muxtree
-myir_opt_expr
-myir_rewrite -k 4 -stats
-myir_opt_share
-myir_opt_clean
-myir_dump
+iris_opt_const
+iris_opt_expr
+iris_opt_const
+iris_opt_muxtree
+iris_opt_expr
+iris_rewrite -k 4 -stats
+iris_opt_share
+iris_opt_clean
+iris_dump

@@ -289,13 +289,13 @@ static std::set<int> find_root_muxes(const MyIR::Module &m,
 } // namespace
 
 struct MyIROptMuxtreePass : public Pass {
-    MyIROptMuxtreePass() : Pass("myir_opt_muxtree",
+    MyIROptMuxtreePass() : Pass("iris_opt_muxtree",
         "eliminate dead branches in MyIR mux trees") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_opt_muxtree\n");
+        log("    iris_opt_muxtree\n");
         log("\n");
         log("Analyze cascaded MyIR Mux expressions as mux trees and remove\n");
         log("branches that can never be selected because the select signal\n");
@@ -313,7 +313,7 @@ struct MyIROptMuxtreePass : public Pass {
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_opt_muxtree.\n");
+        log_header(design, "Executing iris_opt_muxtree.\n");
         extra_args(args, 1, design);
 
         MyIR::Design *myir = MyIR::get_design();
@@ -436,7 +436,7 @@ struct MyIROptMuxtreePass : public Pass {
             }
         }
 
-        log("  myir_opt_muxtree summary:\n");
+        log("  iris_opt_muxtree summary:\n");
         log("    root muxes discovered  : %d\n", total_root_muxes);
         log("    mux-tree visits        : %d\n", total_visits);
         log("    branches removed       : %d (same_inputs=%d / const_sel=%d / path_cond=%d)\n",

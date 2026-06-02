@@ -69,24 +69,24 @@ build_known_constants(const MyIR::Module &m,
 }
 
 struct MyIROptConstPass : public Pass {
-    MyIROptConstPass() : Pass("myir_opt_const",
+    MyIROptConstPass() : Pass("iris_opt_const",
         "constant propagation on MyIR") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_opt_const\n");
+        log("    iris_opt_const\n");
         log("\n");
         log("Propagate constants through direct MyIR assignments.\n");
         log("Sees through both `connect` records and single-operand Buf / Pos\n");
         log("expressions (i.e. `assign y = x` style copies).  Expression\n");
-        log("folding itself is handled by myir_opt_expr.\n");
+        log("folding itself is handled by iris_opt_expr.\n");
         log("\n");
     }
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_opt_const.\n");
+        log_header(design, "Executing iris_opt_const.\n");
         extra_args(args, 1, design);
 
         MyIR::Design *myir = MyIR::get_design();
@@ -142,7 +142,7 @@ struct MyIROptConstPass : public Pass {
             total_buf_pos_hits += buf_pos_hits;
         }
 
-        log("  myir_opt_const summary:\n");
+        log("  iris_opt_const summary:\n");
         log("    modules visited        : %d\n", modules_visited);
         log("    known-constant wires   : %d (incl. %d derived via Buf/Pos)\n",
             total_known_wires, total_buf_pos_hits);

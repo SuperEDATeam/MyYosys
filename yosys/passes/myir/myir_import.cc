@@ -30,27 +30,27 @@ static std::string sigspec_to_name(const RTLIL::SigSpec &sig)
 }
 
 struct MyIRImportPass : public Pass {
-    MyIRImportPass() : Pass("myir_import",
+    MyIRImportPass() : Pass("iris_import",
         "convert RTLIL design to MyIR representation") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_import\n");
+        log("    iris_import\n");
         log("\n");
         log("Convert the current RTLIL design into the MyIR intermediate\n");
         log("representation.  The result is stored in a global MyIR::Design\n");
-        log("and can be inspected with myir_dump, optimised with myir_opt_*,\n");
-        log("or exported back to RTLIL with myir_export.\n");
+        log("and can be inspected with iris_dump, optimised with iris_opt_*,\n");
+        log("or exported back to RTLIL with iris_export.\n");
         log("\n");
-        log("Tip: run 'proc' before myir_import if the design contains\n");
+        log("Tip: run 'proc' before iris_import if the design contains\n");
         log("always-blocks or other procedural constructs.\n");
         log("\n");
     }
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_import.\n");
+        log_header(design, "Executing iris_import.\n");
         extra_args(args, 1, design);
 
         MyIR::ensure_design();
@@ -99,7 +99,7 @@ struct MyIRImportPass : public Pass {
                 MyIR::OpType op = MyIR::celltype_to_optype(type_str);
 
                 if (op == MyIR::OpType::Unknown) {
-                    log_warning("myir_import: unsupported cell type '%s' "
+                    log_warning("iris_import: unsupported cell type '%s' "
                                 "(cell '%s') -- skipped.\n",
                                 type_str.c_str(), cell->name.c_str());
                     continue;

@@ -275,7 +275,7 @@ const char* sens_type_str(SensItem::Type t) {
 }
 
 // ----------------------------------------------------------------
-//  Visualization helpers (used by myir_show / myir_view)
+//  Visualization helpers (used by iris_show / iris_view)
 // ----------------------------------------------------------------
 
 static bool path_exists(const std::string &p)
@@ -341,8 +341,8 @@ std::string find_dot_executable()
         // tools/graphviz/bin/dot at each level.  This covers:
         //   <exe_dir>/tools/...                (exe sits in repo root)
         //   <exe_dir>/../tools/...             (exe one level down)
-        //   <exe_dir>/../../tools/...          (MyVSYosys/x64/)
-        //   <exe_dir>/../../../tools/...       (MyVSYosys/x64/Debug/)
+        //   <exe_dir>/../../tools/...          (IRIS/x64/)
+        //   <exe_dir>/../../../tools/...       (IRIS/x64/Debug/)
         std::string base = exe_dir;
         for (int level = 0; level < 4; level++) {
             std::string p = base + sep + "tools" + sep + "graphviz"
@@ -355,7 +355,7 @@ std::string find_dot_executable()
     }
 
     // Priority 3: explicit override
-    if (const char *env = std::getenv("MYIR_DOT")) {
+    if (const char *env = std::getenv("IRIS_DOT")) {
         if (env[0] && path_exists(env))
             return quote_path(env);
     }

@@ -1,13 +1,13 @@
 # Test shared sub-expression elimination
 read_verilog passes/myir/tests/share_test.v
-myir_import
+iris_import
 log "=== Before opt_share ==="
-myir_dump
-myir_opt_share
+iris_dump
+iris_opt_share
 log "=== After opt_share ==="
-myir_dump
-myir_opt_clean
+iris_dump
+iris_opt_clean
 log "=== After opt_clean ==="
-myir_dump
-myir_export
+iris_dump
+iris_export
 write_verilog share_out.v

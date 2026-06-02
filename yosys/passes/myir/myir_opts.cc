@@ -40,33 +40,33 @@ static void run_one_round(RTLIL::Design *design, const OptsOptions &o)
     std::string k_arg = o.k > 0 ? (" -k " + std::to_string(o.k)) : "";
     std::string rewrite_extra = o.stats ? " -stats" : "";
 
-    if (!o.no_const)    Pass::call(design, "myir_opt_const");
-    if (!o.no_expr)     Pass::call(design, "myir_opt_expr");
-    if (!o.no_const)    Pass::call(design, "myir_opt_const");
-    if (!o.no_muxtree)  Pass::call(design, "myir_opt_muxtree");
-    if (!o.no_expr)     Pass::call(design, "myir_opt_expr");
-    if (!o.no_rewrite)  Pass::call(design, "myir_rewrite" + k_arg + rewrite_extra);
-    if (!o.no_share)    Pass::call(design, "myir_opt_share");
-    if (!o.no_clean)    Pass::call(design, "myir_opt_clean");
+    if (!o.no_const)    Pass::call(design, "iris_opt_const");
+    if (!o.no_expr)     Pass::call(design, "iris_opt_expr");
+    if (!o.no_const)    Pass::call(design, "iris_opt_const");
+    if (!o.no_muxtree)  Pass::call(design, "iris_opt_muxtree");
+    if (!o.no_expr)     Pass::call(design, "iris_opt_expr");
+    if (!o.no_rewrite)  Pass::call(design, "iris_rewrite" + k_arg + rewrite_extra);
+    if (!o.no_share)    Pass::call(design, "iris_opt_share");
+    if (!o.no_clean)    Pass::call(design, "iris_opt_clean");
 }
 
 } // namespace
 
 struct MyIROptsPass : public Pass {
-    MyIROptsPass() : Pass("myir_opts",
+    MyIROptsPass() : Pass("iris_opts",
         "run the full MyIR optimisation pipeline in one go") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_opts [-once | -fixpoint] [-k N] [-stats]\n");
+        log("    iris_opts [-once | -fixpoint] [-k N] [-stats]\n");
         log("              [-noconst] [-noexpr] [-nomuxtree] [-norewrite]\n");
         log("              [-noshare] [-noclean]\n");
         log("\n");
         log("Run the standard MyIR optimisation pipeline:\n");
-        log("  myir_opt_const -> myir_opt_expr -> myir_opt_const\n");
-        log("  -> myir_opt_muxtree -> myir_opt_expr -> myir_rewrite\n");
-        log("  -> myir_opt_share -> myir_opt_clean\n");
+        log("  iris_opt_const -> iris_opt_expr -> iris_opt_const\n");
+        log("  -> iris_opt_muxtree -> iris_opt_expr -> iris_rewrite\n");
+        log("  -> iris_opt_share -> iris_opt_clean\n");
         log("\n");
         log("By default the pipeline is executed once.  Use -fixpoint to\n");
         log("iterate until no further changes are observed (or 10 rounds,\n");
@@ -76,14 +76,14 @@ struct MyIROptsPass : public Pass {
         log("    -once       Run the pipeline exactly once (default).\n");
         log("    -fixpoint   Iterate the pipeline up to 10 rounds, stopping\n");
         log("                early when a round produces no IR change.\n");
-        log("    -k N        Forwarded to 'myir_rewrite -k N'.\n");
-        log("    -stats      Forwarded to 'myir_rewrite -stats'.\n");
-        log("    -noconst    Skip myir_opt_const.\n");
-        log("    -noexpr     Skip myir_opt_expr.\n");
-        log("    -nomuxtree  Skip myir_opt_muxtree.\n");
-        log("    -norewrite  Skip myir_rewrite.\n");
-        log("    -noshare    Skip myir_opt_share.\n");
-        log("    -noclean    Skip myir_opt_clean.\n");
+        log("    -k N        Forwarded to 'iris_rewrite -k N'.\n");
+        log("    -stats      Forwarded to 'iris_rewrite -stats'.\n");
+        log("    -noconst    Skip iris_opt_const.\n");
+        log("    -noexpr     Skip iris_opt_expr.\n");
+        log("    -nomuxtree  Skip iris_opt_muxtree.\n");
+        log("    -norewrite  Skip iris_rewrite.\n");
+        log("    -noshare    Skip iris_opt_share.\n");
+        log("    -noclean    Skip iris_opt_clean.\n");
         log("\n");
         log("This is the recommended entry point for everyday use.  The\n");
         log("individual passes are still useful when debugging a specific\n");
@@ -93,7 +93,7 @@ struct MyIROptsPass : public Pass {
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_opts.\n");
+        log_header(design, "Executing iris_opts.\n");
 
         OptsOptions o;
         size_t argidx;
@@ -118,12 +118,12 @@ struct MyIROptsPass : public Pass {
         extra_args(args, argidx, design);
 
         if (o.k != -1 && o.k < 2)
-            log_error("myir_opts: -k must be >= 2.\n");
+            log_error("iris_opts: -k must be >= 2.\n");
 
         MyIR::Design *myir = MyIR::get_design();
         if (!myir || myir->modules.empty()) {
             log_warning("No MyIR design loaded; nothing to optimise.  "
-                        "Did you forget 'myir_import' or 'myir_ast_import'?\n");
+                        "Did you forget 'iris_import' or 'iris_ast_import'?\n");
             return;
         }
 
@@ -132,24 +132,24 @@ struct MyIROptsPass : public Pass {
         int round = 1;
 
         while (true) {
-            log_header(design, "myir_opts: round %d.\n", round);
+            log_header(design, "iris_opts: round %d.\n", round);
             run_one_round(design, o);
 
             myir = MyIR::get_design();        // pipeline may have replaced it
             size_t cur = design_fingerprint(myir);
 
             if (!o.fixpoint) {
-                log("myir_opts: completed one round (use -fixpoint to iterate).\n");
+                log("iris_opts: completed one round (use -fixpoint to iterate).\n");
                 break;
             }
 
             if (cur == prev) {
-                log("myir_opts: converged after %d round(s).\n", round);
+                log("iris_opts: converged after %d round(s).\n", round);
                 break;
             }
 
             if (round >= max_rounds) {
-                log("myir_opts: stopped after %d round(s) (max_rounds reached).\n",
+                log("iris_opts: stopped after %d round(s) (max_rounds reached).\n",
                     round);
                 break;
             }

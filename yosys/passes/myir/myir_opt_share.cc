@@ -32,13 +32,13 @@ static void replace_operand(MyIR::Module &m,
 }
 
 struct MyIROptSharePass : public Pass {
-    MyIROptSharePass() : Pass("myir_opt_share",
+    MyIROptSharePass() : Pass("iris_opt_share",
         "shared sub-expression elimination on MyIR") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_opt_share\n");
+        log("    iris_opt_share\n");
         log("\n");
         log("Identify expressions with identical operators and operands and\n");
         log("merge them so that only one computation is kept.  All later\n");
@@ -48,7 +48,7 @@ struct MyIROptSharePass : public Pass {
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_opt_share.\n");
+        log_header(design, "Executing iris_opt_share.\n");
         extra_args(args, 1, design);
 
         MyIR::Design *myir = MyIR::get_design();

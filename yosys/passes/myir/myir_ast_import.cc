@@ -219,7 +219,7 @@ static std::string flatten_expr(AstNode *node, MyIR::Module &m, int &tmp_cnt)
         return tmp;
     }
 
-    log_warning("myir_ast_import: unhandled expression type %d -- using 1'0.\n",
+    log_warning("iris_ast_import: unhandled expression type %d -- using 1'0.\n",
                 (int)node->type);
     return "1'0";
 }
@@ -381,7 +381,7 @@ static MyIR::Statement extract_stmt(AstNode *node, MyIR::Module &m, int &tmp_cnt
     s.kind = MyIR::Statement::Assign;
     s.proc_assign.lhs = "?";
     s.proc_assign.rhs = "?";
-    log_warning("myir_ast_import: unhandled statement type %d.\n", (int)node->type);
+    log_warning("iris_ast_import: unhandled statement type %d.\n", (int)node->type);
     return s;
 }
 
@@ -390,29 +390,29 @@ static MyIR::Statement extract_stmt(AstNode *node, MyIR::Module &m, int &tmp_cnt
 // ================================================================
 
 struct MyIRAstImportPass : public Pass {
-    MyIRAstImportPass() : Pass("myir_ast_import",
+    MyIRAstImportPass() : Pass("iris_ast_import",
         "convert Verilog AST to MyIR representation") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_ast_import\n");
+        log("    iris_ast_import\n");
         log("\n");
         log("Convert the Verilog AST (attached to each module after read_verilog)\n");
         log("into the MyIR intermediate representation.\n");
         log("\n");
-        log("Unlike myir_import (which reads from RTLIL), this pass walks the\n");
+        log("Unlike iris_import (which reads from RTLIL), this pass walks the\n");
         log("original AST directly, preserving expression-tree structure and\n");
         log("procedural constructs (if/else, case, assignments).\n");
         log("\n");
         log("Run read_verilog before this pass.  The result is stored in the\n");
-        log("global MyIR::Design and can be inspected with myir_dump.\n");
+        log("global MyIR::Design and can be inspected with iris_dump.\n");
         log("\n");
     }
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_ast_import.\n");
+        log_header(design, "Executing iris_ast_import.\n");
         extra_args(args, 1, design);
 
         MyIR::ensure_design();

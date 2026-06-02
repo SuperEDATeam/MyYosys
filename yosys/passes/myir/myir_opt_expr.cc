@@ -370,13 +370,13 @@ static std::unordered_map<std::string, int> build_producer_map(const MyIR::Modul
 } // namespace
 
 struct MyIROptExprPass : public Pass {
-    MyIROptExprPass() : Pass("myir_opt_expr",
+    MyIROptExprPass() : Pass("iris_opt_expr",
         "perform const folding and simple expression rewriting on MyIR") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_opt_expr\n");
+        log("    iris_opt_expr\n");
         log("\n");
         log("Perform expression-level simplification on MyIR.\n");
         log("This pass handles:\n");
@@ -387,14 +387,14 @@ struct MyIROptExprPass : public Pass {
         log("  - complement rules:  x - x => 0,  x | ~x => -1,  x & ~x => 0\n");
         log("  - idempotent rules:  x & x => x,  x | x => x,  x ^ x => 0\n");
         log("  - simple mux simplification\n");
-        log("Run myir_opt_const before this pass if you want constants from\n");
+        log("Run iris_opt_const before this pass if you want constants from\n");
         log("existing assigns to be propagated into expressions first.\n");
         log("\n");
     }
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_opt_expr.\n");
+        log_header(design, "Executing iris_opt_expr.\n");
         extra_args(args, 1, design);
 
         MyIR::Design *myir = MyIR::get_design();
@@ -459,7 +459,7 @@ struct MyIROptExprPass : public Pass {
             }
         }
 
-        log("  myir_opt_expr summary:\n");
+        log("  iris_opt_expr summary:\n");
         log("    total simplifications : %d\n", total);
         if (!rule_hits.empty()) {
             log("    by rule:\n");

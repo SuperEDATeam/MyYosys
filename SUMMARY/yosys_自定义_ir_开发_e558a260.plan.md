@@ -1,36 +1,36 @@
 ---
 name: Yosys 自定义 IR 开发
-overview: 在已发行的 Yosys Windows VS 工程 (D:\MyVSYosys-pub) 中，插入自定义 IR 层及配套 Pass，复用 Yosys 原有前端/后端/CLI，实现 RTLIL <-> 自定义 IR 双向转换、IR 上的优化、IR 文本输出、以及自定义 show 命令。
+overview: 在已发行的 Yosys Windows VS 工程 (D:\IRIS-pub) 中，插入自定义 IR 层及配套 Pass，复用 Yosys 原有前端/后端/CLI，实现 RTLIL <-> 自定义 IR 双向转换、IR 上的优化、IR 文本输出、以及自定义 show 命令。
 todos:
   - id: build-yosys
-    content: Build MyVSYosys.sln to verify baseline Yosys compiles and runs on your machine
+    content: Build IRIS.sln to verify baseline Yosys compiles and runs on your machine
     status: pending
   - id: myir-data
     content: Design and implement MyIR data structures (myir.h / myir.cc) in passes/myir/
     status: completed
   - id: myir-import
-    content: "Implement myir_import Pass: convert RTLIL::Design -> MyIR::Design"
+    content: "Implement iris_import Pass: convert RTLIL::Design -> MyIR::Design"
     status: completed
   - id: myir-export
-    content: "Implement myir_export Pass: convert MyIR::Design -> RTLIL::Design"
+    content: "Implement iris_export Pass: convert MyIR::Design -> RTLIL::Design"
     status: completed
   - id: myir-dump
-    content: "Implement myir_dump Pass: output human-readable MyIR text format"
+    content: "Implement iris_dump Pass: output human-readable MyIR text format"
     status: completed
   - id: myir-show
-    content: "Implement myir_show Pass: generate DOT from MyIR and call Graphviz"
+    content: "Implement iris_show Pass: generate DOT from MyIR and call Graphviz"
     status: completed
   - id: myir-opt-share
-    content: "Implement myir_opt_share Pass: shared sub-expression elimination on MyIR"
+    content: "Implement iris_opt_share Pass: shared sub-expression elimination on MyIR"
     status: completed
   - id: myir-opt-clean
-    content: "Implement myir_opt_clean Pass: dead-code elimination on MyIR"
+    content: "Implement iris_opt_clean Pass: dead-code elimination on MyIR"
     status: completed
   - id: myir-opt-const
-    content: "Implement myir_opt_const Pass: constant propagation on MyIR"
+    content: "Implement iris_opt_const Pass: constant propagation on MyIR"
     status: completed
   - id: end-to-end-test
-    content: "End-to-end validation: read_verilog -> myir_import -> optimize -> myir_export -> write_verilog"
+    content: "End-to-end validation: read_verilog -> iris_import -> optimize -> iris_export -> write_verilog"
     status: completed
 isProject: false
 ---
@@ -42,7 +42,7 @@ isProject: false
 你已经有两个代码库：
 
 - **VerilogCompiler** (`d:\VerilogCompiler\main`) -- 学长的独立工具，任务三四五基本完成
-- **MyVSYosys** (`D:\MyVSYosys-pub`) -- 老师下发的 Yosys 源码 Windows 移植版，已可用 VS 2022 编译
+- **IRIS** (`D:\IRIS-pub`) -- 老师下发的 Yosys 源码 Windows 移植版，已可用 VS 2022 编译
 
 老师的新要求核心：**不另做独立软件，而是在 Yosys 内部注册自定义 Pass，用户在 Yosys shell 里就能调用你的功能。**
 
@@ -61,13 +61,13 @@ flowchart LR
     end
 
     subgraph your_code [Your Custom Code]
-        ToMyIR["myir_import Pass\nRTLIL -> MyIR"]
+        ToMyIR["iris_import Pass\nRTLIL -> MyIR"]
         MyIR["MyIR::Design\n(custom IR data)"]
-        OptShare["myir_opt_share Pass"]
-        OptClean["myir_opt_clean Pass"]
-        DumpIR["myir_dump Pass\n(text output)"]
-        MyShow["myir_show Pass\n(DOT output)"]
-        FromMyIR["myir_export Pass\nMyIR -> RTLIL"]
+        OptShare["iris_opt_share Pass"]
+        OptClean["iris_opt_clean Pass"]
+        DumpIR["iris_dump Pass\n(text output)"]
+        MyShow["iris_show Pass\n(DOT output)"]
+        FromMyIR["iris_export Pass\nMyIR -> RTLIL"]
     end
 
     Verilog --> ReadV --> RTLIL
@@ -87,12 +87,12 @@ flowchart LR
 
 ```
 yosys> read_verilog carry.v          # Yosys 原有前端
-yosys> myir_import                   # 你的 Pass: RTLIL -> MyIR
-yosys> myir_dump output/carry.myir   # 你的 Pass: 输出自定义 IR 文本
-yosys> myir_opt_share                # 你的 Pass: 共享子表达式优化
-yosys> myir_opt_clean                # 你的 Pass: 死代码消除
-yosys> myir_show                     # 你的 Pass: 生成 DOT
-yosys> myir_export                   # 你的 Pass: MyIR -> RTLIL
+yosys> iris_import                   # 你的 Pass: RTLIL -> MyIR
+yosys> iris_dump output/carry.myir   # 你的 Pass: 输出自定义 IR 文本
+yosys> iris_opt_share                # 你的 Pass: 共享子表达式优化
+yosys> iris_opt_clean                # 你的 Pass: 死代码消除
+yosys> iris_show                     # 你的 Pass: 生成 DOT
+yosys> iris_export                   # 你的 Pass: MyIR -> RTLIL
 yosys> write_verilog carry_out.v     # Yosys 原有后端
 ```
 
@@ -110,7 +110,7 @@ yosys> write_verilog carry_out.v     # Yosys 原有后端
 | **Yosys 插件 (plugin)**    | Yosys 支持 `plugin -i xxx.so` 动态加载 Pass，但在 Windows 上插件机制不完善，不推荐                                                   |
 
 
-**推荐方案**：在 `D:\MyVSYosys-pub\yosys\` 下新建目录 `passes\myir\`，所有你的文件放在这里。只需修改 `.vcxproj` 把你的文件加入编译列表，Yosys 原有代码零修改。
+**推荐方案**：在 `D:\IRIS-pub\yosys\` 下新建目录 `passes\myir\`，所有你的文件放在这里。只需修改 `.vcxproj` 把你的文件加入编译列表，Yosys 原有代码零修改。
 
 ---
 
@@ -177,13 +177,13 @@ struct Design {
 
 ## 阶段二：RTLIL -> MyIR 转换 Pass（约 2 天）
 
-新文件：`yosys\passes\myir\myir_import.cc`
+新文件：`yosys\passes\myir\iris_import.cc`
 
 注册为 Yosys Pass：
 
 ```cpp
 struct MyIRImportPass : public Pass {
-    MyIRImportPass() : Pass("myir_import",
+    MyIRImportPass() : Pass("iris_import",
         "convert RTLIL design to MyIR representation") {}
     void execute(std::vector<std::string> args, RTLIL::Design *design) override;
 };
@@ -202,7 +202,7 @@ struct MyIRImportPass : public Pass {
 
 ## 阶段三：MyIR -> RTLIL 导出 Pass（约 1.5 天）
 
-新文件：`yosys\passes\myir\myir_export.cc`
+新文件：`yosys\passes\myir\iris_export.cc`
 
 反向操作：从 `MyIR::Design` 重建 `RTLIL::Module`：
 
@@ -214,7 +214,7 @@ struct MyIRImportPass : public Pass {
 
 ## 阶段四：MyIR 文本格式输出 Pass（约 1 天）
 
-新文件：`yosys\passes\myir\myir_dump.cc`
+新文件：`yosys\passes\myir\iris_dump.cc`
 
 输出类似这样的可读文本（与 RTLIL ilang 区分）：
 
@@ -238,17 +238,17 @@ end
 
 从 VerilogCompiler 中**迁移你已有的优化逻辑**，改为操作 `MyIR::Design`：
 
-`**myir_opt_share`** (`yosys\passes\myir\myir_opt_share.cc`)：
+`**iris_opt_share`** (`yosys\passes\myir\iris_opt_share.cc`)：
 
 - 遍历 `module.exprs`，将 `(op, operands)` 相同的 Expr 合并
 - 后续引用替换为共享的 `result_wire`
 
-`**myir_opt_clean`** (`yosys\passes\myir\myir_opt_clean.cc`)：
+`**iris_opt_clean`** (`yosys\passes\myir\iris_opt_clean.cc`)：
 
 - 收集所有被引用的 wire
 - 删除 `result_wire` 未被引用的 Expr
 
-`**myir_opt_const`** (`yosys\passes\myir\myir_opt_const.cc`)（扩展）：
+`**iris_opt_const`** (`yosys\passes\myir\iris_opt_const.cc`)（扩展）：
 
 - 若操作数都是常量 wire，直接计算结果，替换为常量赋值
 
@@ -256,7 +256,7 @@ end
 
 ## 阶段六：MyIR DOT 可视化 Pass（约 1.5 天）
 
-新文件：`yosys\passes\myir\myir_show.cc`
+新文件：`yosys\passes\myir\iris_show.cc`
 
 参考 Yosys 原有的 `passes/cmds/show.cc`（`ShowWorker`），但从 `MyIR::Design` 生成 DOT。由于 `MyIR::Expr` 结构比 `RTLIL::Cell` 简单得多，代码量会小很多。同样调用 Graphviz `dot -Tpng` 生成图片（可复用 Yosys 原有的 `DOT_CMD` 逻辑）。
 
@@ -264,40 +264,40 @@ end
 
 ## 工程集成方式
 
-只需修改 `[MyVSYosys.vcxproj](D:\MyVSYosys-pub\MyVSYosys\MyVSYosys.vcxproj)` 的 `<ItemGroup>` 部分，添加你的文件：
+只需修改 `[IRIS.vcxproj](D:\IRIS-pub\IRIS\IRIS.vcxproj)` 的 `<ItemGroup>` 部分，添加你的文件：
 
 ```xml
 <ClCompile Include="..\yosys\passes\myir\myir.cc" />
-<ClCompile Include="..\yosys\passes\myir\myir_import.cc" />
-<ClCompile Include="..\yosys\passes\myir\myir_export.cc" />
-<ClCompile Include="..\yosys\passes\myir\myir_dump.cc" />
-<ClCompile Include="..\yosys\passes\myir\myir_show.cc" />
-<ClCompile Include="..\yosys\passes\myir\myir_opt_share.cc" />
-<ClCompile Include="..\yosys\passes\myir\myir_opt_clean.cc" />
-<ClCompile Include="..\yosys\passes\myir\myir_opt_const.cc" />
+<ClCompile Include="..\yosys\passes\myir\iris_import.cc" />
+<ClCompile Include="..\yosys\passes\myir\iris_export.cc" />
+<ClCompile Include="..\yosys\passes\myir\iris_dump.cc" />
+<ClCompile Include="..\yosys\passes\myir\iris_show.cc" />
+<ClCompile Include="..\yosys\passes\myir\iris_opt_share.cc" />
+<ClCompile Include="..\yosys\passes\myir\iris_opt_clean.cc" />
+<ClCompile Include="..\yosys\passes\myir\iris_opt_const.cc" />
 <ClInclude Include="..\yosys\passes\myir\myir.h" />
 ```
 
-不需要改 Yosys 任何原有 .cc/.h 文件。编译后运行 `MyVSYosys.exe`，你的 Pass 会自动注册，在 shell 中可直接使用。
+不需要改 Yosys 任何原有 .cc/.h 文件。编译后运行 `IRIS.exe`，你的 Pass 会自动注册，在 shell 中可直接使用。
 
 ---
 
 ## 文件清单
 
-所有新文件均在 `D:\MyVSYosys-pub\yosys\passes\myir\` 下：
+所有新文件均在 `D:\IRIS-pub\yosys\passes\myir\` 下：
 
 
 | File                | Role                              |
 | ------------------- | --------------------------------- |
 | `myir.h`            | MyIR 数据结构定义 + 全局 Design 指针        |
 | `myir.cc`           | MyIR 辅助函数（OpType 名称映射等）           |
-| `myir_import.cc`    | Pass `myir_import`: RTLIL -> MyIR |
-| `myir_export.cc`    | Pass `myir_export`: MyIR -> RTLIL |
-| `myir_dump.cc`      | Pass `myir_dump`: 输出 MyIR 文本格式    |
-| `myir_show.cc`      | Pass `myir_show`: 从 MyIR 生成 DOT   |
-| `myir_opt_share.cc` | Pass `myir_opt_share`: 共享子表达式优化   |
-| `myir_opt_clean.cc` | Pass `myir_opt_clean`: 死代码消除      |
-| `myir_opt_const.cc` | Pass `myir_opt_const`: 常量传播       |
+| `iris_import.cc`    | Pass `iris_import`: RTLIL -> MyIR |
+| `iris_export.cc`    | Pass `iris_export`: MyIR -> RTLIL |
+| `iris_dump.cc`      | Pass `iris_dump`: 输出 MyIR 文本格式    |
+| `iris_show.cc`      | Pass `iris_show`: 从 MyIR 生成 DOT   |
+| `iris_opt_share.cc` | Pass `iris_opt_share`: 共享子表达式优化   |
+| `iris_opt_clean.cc` | Pass `iris_opt_clean`: 死代码消除      |
+| `iris_opt_const.cc` | Pass `iris_opt_const`: 常量传播       |
 
 
 ---
@@ -333,4 +333,4 @@ gantt
 
 
 
-第一步：确保 `D:\MyVSYosys-pub\MyVSYosys.sln` 能在你的 VS 上正常编译并运行 `yosys> help`。
+第一步：确保 `D:\IRIS-pub\IRIS.sln` 能在你的 VS 上正常编译并运行 `yosys> help`。

@@ -6,22 +6,22 @@ USING_YOSYS_NAMESPACE
 PRIVATE_NAMESPACE_BEGIN
 
 struct MyIRViewPass : public Pass {
-    MyIRViewPass() : Pass("myir_view",
+    MyIRViewPass() : Pass("iris_view",
         "open an already-generated image or DOT file") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_view <file> [-viewer <cmd>]\n");
+        log("    iris_view <file> [-viewer <cmd>]\n");
         log("\n");
         log("Open an already-generated image or DOT file with the OS\n");
         log("default associated viewer (or a custom command via -viewer).\n");
         log("\n");
-        log("Unlike 'myir_show', this command does NOT regenerate the\n");
+        log("Unlike 'iris_show', this command does NOT regenerate the\n");
         log("file; it just opens whatever path you provide.  Typical use:\n");
         log("\n");
-        log("    yosys> myir_show                # generate files only\n");
-        log("    yosys> myir_view myir_show.png  # view later, no regen\n");
+        log("    yosys> iris_show                # generate files only\n");
+        log("    yosys> iris_view iris_show.png  # view later, no regen\n");
         log("\n");
         log("    -viewer <cmd>    open the file with <cmd> \"<file>\"\n");
         log("                     instead of the OS default viewer\n");
@@ -30,7 +30,7 @@ struct MyIRViewPass : public Pass {
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_view.\n");
+        log_header(design, "Executing iris_view.\n");
 
         std::string file;
         std::string viewer;
@@ -51,17 +51,17 @@ struct MyIRViewPass : public Pass {
         extra_args(args, argidx, design);
 
         if (file.empty()) {
-            log_error("myir_view: missing <file> argument.\n"
-                      "  Usage: myir_view <file> [-viewer <cmd>]\n"
-                      "  Run 'myir_show' first to generate a .dot / image\n"
-                      "  file, then pass its path to 'myir_view'.\n");
+            log_error("iris_view: missing <file> argument.\n"
+                      "  Usage: iris_view <file> [-viewer <cmd>]\n"
+                      "  Run 'iris_show' first to generate a .dot / image\n"
+                      "  file, then pass its path to 'iris_view'.\n");
             return;
         }
 
         {
             std::ifstream probe(file.c_str());
             if (!probe.good())
-                log_error("myir_view: file '%s' not found or unreadable.\n",
+                log_error("iris_view: file '%s' not found or unreadable.\n",
                           file.c_str());
         }
 
@@ -74,7 +74,7 @@ struct MyIRViewPass : public Pass {
         log("  Exec: %s\n", cmd.c_str());
         int rc = run_command(cmd);
         if (rc != 0)
-            log_warning("myir_view: viewer command returned %d.\n", rc);
+            log_warning("iris_view: viewer command returned %d.\n", rc);
     }
 } MyIRViewPass;
 

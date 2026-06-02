@@ -122,7 +122,7 @@ std::string  uint_to_const(uint64_t val, int width);
 // Empirical benefit score for an IR transformation.
 //
 // Higher score = transformation is more profitable.  Used by the
-// myir_opt_expr / myir_opt_muxtree / myir_rewrite passes to pick
+// iris_opt_expr / iris_opt_muxtree / iris_rewrite passes to pick
 // between competing rewrite candidates and to optionally guard
 // non-profitable rewrites (score <= 0).
 //
@@ -145,7 +145,7 @@ int          transform_benefit_score(int removed_exprs, int removed_muxes,
 const char*  stmt_kind_str(Statement::Kind k);
 const char*  sens_type_str(SensItem::Type t);
 
-// ----- Visualization helpers (used by myir_show / myir_view) -----
+// ----- Visualization helpers (used by iris_show / iris_view) -----
 
 // Directory containing the running yosys executable (trailing separator
 // stripped).  Empty string on failure.
@@ -154,7 +154,7 @@ std::string get_executable_dir();
 // Locate a usable Graphviz 'dot' executable.  Lookup order:
 //   1. <exe_dir>/tools/graphviz/bin/dot(.exe)
 //   2. <exe_dir>/../tools/graphviz/bin/dot(.exe)   (VS Debug/Release subdir)
-//   3. Environment variable MYIR_DOT
+//   3. Environment variable IRIS_DOT
 //   4. System PATH
 // Returns a shell-ready string (already quoted when it contains a full path)
 // or an empty string if no 'dot' was found.

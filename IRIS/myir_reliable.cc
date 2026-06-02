@@ -1,4 +1,4 @@
-﻿#include "kernel/yosys.h"
+#include "kernel/yosys.h"
 
 USING_YOSYS_NAMESPACE
 PRIVATE_NAMESPACE_BEGIN
@@ -36,8 +36,8 @@ static bool verify_module_with_myir(RTLIL::Design* design, RTLIL::IdString mod_n
 
         Pass::call(design, "design -reset");
         Pass::call(design, "design -copy-from " + src_design_name + " " + mod);
-        Pass::call(design, "myir_ast_import");
-        Pass::call(design, "myir_export");
+        Pass::call(design, "iris_ast_import");
+        Pass::call(design, "iris_export");
         Pass::call(design, "proc");
         Pass::call(design, "memory");
         Pass::call(design, "opt_clean");
@@ -63,14 +63,14 @@ static bool verify_module_with_myir(RTLIL::Design* design, RTLIL::IdString mod_n
 }
 
 struct MyIRReliablePass : public Pass {
-    MyIRReliablePass() : Pass("myir_reliable",
+    MyIRReliablePass() : Pass("iris_reliable",
         "check whether AST -> MyIR -> RTLIL stays equivalent module-by-module") {
     }
 
     void help() override
     {
         log("\n");
-        log("    myir_reliable\n");
+        log("    iris_reliable\n");
         log("\n");
         log("Run a per-module reliability check on the current selection.\n");
         log("For each selected module, this command compares:\n");
@@ -90,7 +90,7 @@ struct MyIRReliablePass : public Pass {
 
     void execute(std::vector<std::string> args, RTLIL::Design* design) override
     {
-        log_header(design, "Executing myir_reliable.\n");
+        log_header(design, "Executing iris_reliable.\n");
         extra_args(args, 1, design);
 
         std::vector<RTLIL::IdString> modules;
@@ -98,7 +98,7 @@ struct MyIRReliablePass : public Pass {
             modules.push_back(module->name);
 
         if (modules.empty()) {
-            log_warning("myir_reliable: no selected modules.\n");
+            log_warning("iris_reliable: no selected modules.\n");
             return;
         }
 

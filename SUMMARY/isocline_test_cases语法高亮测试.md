@@ -12,7 +12,7 @@
 ## 二、基础交互功能测试
 
 ### TC-02: 程序能正常启动并进入交互模式
-- **步骤**: 运行 `MyVSYosys.exe`
+- **步骤**: 运行 `IRIS.exe`
 - **预期**: 出现 yosys 欢迎横幅，最后一行显示 `yosys>` 提示符
 
 ### TC-03: 方向键编辑
@@ -165,7 +165,7 @@
 
 ### TC-22: 移除 `YOSYS_ENABLE_ISOCLINE` 宏后仍能编译
 - **步骤**:
-  1. 在 `MyVSYosys.vcxproj` 中移除四个配置里的 `YOSYS_ENABLE_ISOCLINE;`
+  1. 在 `IRIS.vcxproj` 中移除四个配置里的 `YOSYS_ENABLE_ISOCLINE;`
   2. 重新编译
 - **预期**: 编译通过，程序回退到原有的 `fgets` 输入模式（无高亮、无行编辑）
 

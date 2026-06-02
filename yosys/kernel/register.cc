@@ -886,7 +886,7 @@ struct HelpPass : public Pass {
 			const char *cyan = "\033[96m";
 			const char *reset = "\033[0m";
 			for (auto &it : pass_register) {
-				if (it.first.compare(0, 4, "myir") == 0)
+				if (it.first.compare(0, 4, "iris") == 0)
 					log("    %s%-20s%s %s\n", cyan, it.first.c_str(), reset, it.second->short_help.c_str());
 				else
 					log("    %-20s %s\n", it.first.c_str(), it.second->short_help.c_str());

@@ -1134,13 +1134,13 @@ static void apply_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
 } // namespace
 
 struct MyIRRewritePass : public Pass {
-    MyIRRewritePass() : Pass("myir_rewrite",
+    MyIRRewritePass() : Pass("iris_rewrite",
         "k-cut based algebraic rewriting on MyIR") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_rewrite [-k N] [-max-cuts N] [-stats]\n");
+        log("    iris_rewrite [-k N] [-max-cuts N] [-stats]\n");
         log("\n");
         log("Enumerate k-cuts for each MyIR expression and run local\n");
         log("pattern-based rewriting on the cuts.\n");
@@ -1186,7 +1186,7 @@ struct MyIRRewritePass : public Pass {
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_rewrite.\n");
+        log_header(design, "Executing iris_rewrite.\n");
 
         int k = 4;
         int max_cuts_per_node = 16;
@@ -1211,9 +1211,9 @@ struct MyIRRewritePass : public Pass {
         extra_args(args, argidx, design);
 
         if (k < 2)
-            log_error("myir_rewrite: -k must be >= 2.\n");
+            log_error("iris_rewrite: -k must be >= 2.\n");
         if (max_cuts_per_node < 0)
-            log_error("myir_rewrite: -max-cuts must be >= 0 (0 = unlimited).\n");
+            log_error("iris_rewrite: -max-cuts must be >= 0 (0 = unlimited).\n");
 
         MyIR::Design *myir = MyIR::get_design();
         if (!myir || myir->modules.empty()) {
@@ -1261,7 +1261,7 @@ struct MyIRRewritePass : public Pass {
             }
         }
 
-        log("  myir_rewrite summary:\n");
+        log("  iris_rewrite summary:\n");
         log("    iterations            : %d\n", total_iterations);
         log("    total cuts enumerated : %lld (peak per node = %d)\n",
             total_cuts_enumerated, max_peak_cuts);

@@ -134,13 +134,13 @@ static void dump_module(std::ostream &os, const MyIR::Module &m)
 }
 
 struct MyIRDumpPass : public Pass {
-    MyIRDumpPass() : Pass("myir_dump",
+    MyIRDumpPass() : Pass("iris_dump",
         "output human-readable MyIR text format") {}
 
     void help() override
     {
         log("\n");
-        log("    myir_dump [filename]\n");
+        log("    iris_dump [filename]\n");
         log("\n");
         log("Print the current MyIR design in a human-readable text format.\n");
         log("If a filename is given, the output is written to that file;\n");
@@ -150,7 +150,7 @@ struct MyIRDumpPass : public Pass {
 
     void execute(std::vector<std::string> args, RTLIL::Design *design) override
     {
-        log_header(design, "Executing myir_dump.\n");
+        log_header(design, "Executing iris_dump.\n");
 
         std::string filename;
         size_t argidx;

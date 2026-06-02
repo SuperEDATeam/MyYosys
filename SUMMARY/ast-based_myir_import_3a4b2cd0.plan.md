@@ -1,24 +1,24 @@
 ---
 name: AST-based MyIR import
-overview: 新增 myir_ast_import Pass，直接从 Yosys AST（而非 RTLIL）构建 MyIR，保留表达式树结构和过程语句（if/else、case、赋值），与现有 RTLIL 路线并存。
+overview: 新增 iris_ast_import Pass，直接从 Yosys AST（而非 RTLIL）构建 MyIR，保留表达式树结构和过程语句（if/else、case、赋值），与现有 RTLIL 路线并存。
 todos:
   - id: ast-extend-myir
     content: 扩展 MyIR 数据结构：在 myir.h/cc 中添加 ProcAssign, IfElse, CaseItem, CaseStmt, Statement, ProcBlock 类型及辅助函数
     status: completed
   - id: ast-import-pass
-    content: 实现 myir_ast_import Pass (myir_ast_import.cc)：含表达式树展平、过程语句提取、wire 宽度推断
+    content: 实现 iris_ast_import Pass (iris_ast_import.cc)：含表达式树展平、过程语句提取、wire 宽度推断
     status: completed
   - id: ast-update-dump
-    content: 更新 myir_dump.cc：支持 ProcBlock 的文本格式输出（缩进显示 if/else/case/assign）
+    content: 更新 iris_dump.cc：支持 ProcBlock 的文本格式输出（缩进显示 if/else/case/assign）
     status: completed
   - id: ast-update-show
-    content: 更新 myir_show.cc：DOT 图中增加过程块子图和语句节点
+    content: 更新 iris_show.cc：DOT 图中增加过程块子图和语句节点
     status: completed
   - id: ast-export-compat
-    content: 更新 myir_export.cc：对含 proc_blocks 的模块输出 warning，确保 exprs/connects 部分正常导出
+    content: 更新 iris_export.cc：对含 proc_blocks 的模块输出 warning，确保 exprs/connects 部分正常导出
     status: completed
   - id: ast-vcxproj
-    content: 更新 .vcxproj 和 .vcxproj.filters 添加 myir_ast_import.cc
+    content: 更新 .vcxproj 和 .vcxproj.filters 添加 iris_ast_import.cc
     status: completed
   - id: ast-test
     content: 创建测试用例（mux_ifelse.v, mux_case.v, test_ast.ys）并验证 AST 路线与 RTLIL 路线对比
@@ -37,19 +37,19 @@ flowchart LR
     V["Verilog Source"] --> RV["read_verilog"]
     RV --> AST["AstModule::ast\n(pre-simplify AST clone)"]
     RV --> RTLIL["RTLIL::Design"]
-    AST --> NEW["myir_ast_import\n(NEW)"]
-    RTLIL --> OLD["myir_import\n(existing)"]
+    AST --> NEW["iris_ast_import\n(NEW)"]
+    RTLIL --> OLD["iris_import\n(existing)"]
     NEW --> MyIR["MyIR::Design"]
     OLD --> MyIR
 ```
 
-两条路线并存，用户选择调用 `myir_ast_import` 或 `myir_import`。
+两条路线并存，用户选择调用 `iris_ast_import` 或 `iris_import`。
 
 ---
 
 ## 一、扩展 MyIR 数据结构
 
-在 [myir.h](D:\MyVSYosys-pub\yosys\passes\myir\myir.h) 中新增过程块相关类型：
+在 [myir.h](D:\IRIS-pub\yosys\passes\myir\myir.h) 中新增过程块相关类型：
 
 ```cpp
 // 过程赋值
@@ -102,15 +102,15 @@ struct Module {
 };
 ```
 
-在 [myir.cc](D:\MyVSYosys-pub\yosys\passes\myir\myir.cc) 中新增：
+在 [myir.cc](D:\IRIS-pub\yosys\passes\myir\myir.cc) 中新增：
 - AST 节点类型 (`AST_BIT_AND` 等) 到 `OpType` 的映射函数 `ast_type_to_optype()`
 - `Statement::Kind` 到字符串的转换
 
 ---
 
-## 二、实现 `myir_ast_import` Pass
+## 二、实现 `iris_ast_import` Pass
 
-新文件 `D:\MyVSYosys-pub\yosys\passes\myir\myir_ast_import.cc`，需 `#include "frontends/ast/ast.h"`。
+新文件 `D:\IRIS-pub\yosys\passes\myir\iris_ast_import.cc`，需 `#include "frontends/ast/ast.h"`。
 
 ### 2.1 入口逻辑
 
@@ -185,9 +185,9 @@ for (auto module : design->selected_modules()) {
 
 ---
 
-## 三、更新 myir_dump / myir_show
+## 三、更新 iris_dump / iris_show
 
-### 3.1 myir_dump.cc
+### 3.1 iris_dump.cc
 
 在 `dump_module()` 中增加对 `proc_blocks` 的输出：
 
@@ -200,7 +200,7 @@ for (auto module : design->selected_modules()) {
   end
 ```
 
-### 3.2 myir_show.cc
+### 3.2 iris_show.cc
 
 在 DOT 生成中为 `ProcBlock` 添加子图：
 - 用 `subgraph cluster_proc_N` 框住过程块
@@ -211,18 +211,18 @@ for (auto module : design->selected_modules()) {
 
 ## 四、Export 兼容性
 
-现有 `myir_export` 基于 `exprs` + `connects` 生成 RTLIL cell/connection。对于 `proc_blocks`：
+现有 `iris_export` 基于 `exprs` + `connects` 生成 RTLIL cell/connection。对于 `proc_blocks`：
 - 连续赋值部分（已展平到 `exprs`）照常导出
 - `proc_blocks` 内容暂不导出到 RTLIL（需要创建 `RTLIL::Process`，复杂度高）
-- 在 `myir_export` 中对含 `proc_blocks` 的模块输出 warning 提示
+- 在 `iris_export` 中对含 `proc_blocks` 的模块输出 warning 提示
 
 ---
 
 ## 五、工程集成
 
-在 [MyVSYosys.vcxproj](D:\MyVSYosys-pub\MyVSYosys\MyVSYosys.vcxproj) 的 `ClCompile` 列表中添加：
+在 [IRIS.vcxproj](D:\IRIS-pub\IRIS\IRIS.vcxproj) 的 `ClCompile` 列表中添加：
 ```xml
-<ClCompile Include="..\yosys\passes\myir\myir_ast_import.cc" />
+<ClCompile Include="..\yosys\passes\myir\iris_ast_import.cc" />
 ```
 
 ---
@@ -233,8 +233,8 @@ for (auto module : design->selected_modules()) {
 复用现有 `carry.v`:
 ```
 yosys> read_verilog passes/myir/tests/carry.v
-yosys> myir_ast_import
-yosys> myir_dump
+yosys> iris_ast_import
+yosys> iris_dump
 ```
 
 ### 6.2 If/Else（验证过程语句提取）
@@ -264,7 +264,7 @@ endmodule
 ```
 
 ### 6.4 对比验证
-同一设计分别用 `myir_import`（RTLIL 路线）和 `myir_ast_import`（AST 路线），对比 `myir_dump` 输出。
+同一设计分别用 `iris_import`（RTLIL 路线）和 `iris_ast_import`（AST 路线），对比 `iris_dump` 输出。
 
 ---
 
@@ -272,12 +272,12 @@ endmodule
 
 ```
 yosys> read_verilog design.v
-yosys> myir_ast_import              # AST 路线（新）
-yosys> myir_dump                    # 查看 IR（含过程块）
-yosys> myir_opt_share               # 优化（作用于 exprs 部分）
-yosys> myir_opt_const
-yosys> myir_opt_clean
-yosys> myir_show -o design.dot      # 可视化
-yosys> myir_export                  # 导出（仅 exprs/connects 部分）
+yosys> iris_ast_import              # AST 路线（新）
+yosys> iris_dump                    # 查看 IR（含过程块）
+yosys> iris_opt_share               # 优化（作用于 exprs 部分）
+yosys> iris_opt_const
+yosys> iris_opt_clean
+yosys> iris_show -o design.dot      # 可视化
+yosys> iris_export                  # 导出（仅 exprs/connects 部分）
 yosys> write_verilog design_out.v
 ```

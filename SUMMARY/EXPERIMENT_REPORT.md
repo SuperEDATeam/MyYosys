@@ -92,9 +92,16 @@ myir_opt_const → myir_opt_expr → myir_opt_strength → myir_opt_compare
 
 ## 三、测试数据集
 
-### 3.1 来源与获取
+### 3.1 来源、出处与权威性
 
-数据集为 **EPFL Combinational Benchmark Suite**（EPFL 集成系统实验室发布的逻辑综合标准评测集，学术界广泛使用），通过以下方式拉取到本地：
+数据集为 **EPFL Combinational Benchmark Suite**（EPFL 组合逻辑基准电路套件）。
+
+- **创建机构**：瑞士**洛桑联邦理工学院（EPFL, École Polytechnique Fédérale de Lausanne）**下属的**集成系统实验室（LSI, Laboratory of Integrated Systems）**。EPFL 是欧洲顶尖理工院校之一，LSI 由电子设计自动化（EDA）领域权威学者 **Giovanni De Micheli** 教授领衔，长期从事逻辑综合、新兴器件与系统级设计研究。
+- **发布与文献**：该套件由 Luca Amarù、Pierre-Emmanuel Gaillardon、Giovanni De Micheli 于 **2015 年**在逻辑综合领域的重要会议 **IWLS（International Workshop on Logic & Synthesis）2015** 上正式发布，论文题为《The EPFL Combinational Benchmark Suite》。它自发布以来已成为**逻辑优化与综合社区的事实标准评测集**，被 ABC、mockturtle、Yosys 等主流工具与大量学术论文广泛引用。
+- **设计意图（本实验"含金量"的关键背景）**：套件原始共 **23 个组合电路**，分为 arithmetic（算术）、random/control（随机/控制）、MtM（千万门级）三类。其官方文档明确说明：这些电路的初始实现是**"有意做成次优 / 未优化的（intendedly sub-optimal / unoptimized）"**，目的就是**专门用来挑战和拉开现代逻辑优化工具的差距**。换言之，它不是"随手攒的玩具电路"，而是被刻意构造来"压榨"优化器能力的标准擂台——能在其上稳定取得面积收益且通过形式等价，具有实打实的说服力。
+- **官方还提供"最佳已知结果"榜单**：社区持续维护各电路在 LUT-6 映射下的最优 size/depth 记录，并设有年度提交与等价复核机制（最近一次为 2025 竞赛，2026 周期截止 IWLS 2026 前），从侧面印证了该套件的活跃度与权威性。
+
+获取方式：
 
 ```powershell
 git clone --depth 1 https://github.com/lsils/benchmarks tests/epfl/lsils_benchmarks
@@ -120,24 +127,32 @@ lsils_benchmarks/
 
 数据集另含超大规模的 MtM（Multiplier-the-Mega，千万门级）子集，本实验通过 benchmark 清单中的 `!mtm` 前缀默认排除（需 `--include-mtm` 才启用），因其规模会耗尽普通工作站内存。
 
-### 3.3 本实验的 benchmark 选取
+### 3.3 本实验的 benchmark 选取与规模
 
-清单文件 `tests/epfl/benchmarks.txt` 选取了 10 条规模适中、AST 路线可稳健处理的组合电路作为 tier-1 集合：
+清单文件 `tests/epfl/benchmarks.txt` 选取了 10 条 AST 路线可稳健处理、且**等价可判定**的组合电路作为 tier-1 集合。下表给出每条电路的功能、端口规模（主输入 / 主输出位宽）、本实验中的门级规模（Yosys `opt -full` 后的 RTLIL cell 数），以及 EPFL 官方给出的 LUT-6 映射规模与逻辑深度（levels）作为复杂度参考：
 
-| 类别 | benchmark | 说明 |
-|---|---|---|
-| random_control | `dec` | 二进制→独热译码器 |
-| random_control | `int2float` | 整数转浮点 |
-| random_control | `ctrl` | 控制逻辑 |
-| random_control | `cavlc` | CAVLC 编码控制 |
-| random_control | `priority` | 优先级编码器 |
-| random_control | `router` | 路由控制 |
-| random_control | `i2c` | I²C 控制器组合部分 |
-| arithmetic | `adder` | 进位链加法器 |
-| arithmetic | `bar` | 桶形移位器 |
-| arithmetic | `max` | 最大值选择 |
+| benchmark | 类别 | 功能 | 主输入 | 主输出 | 本实验门级 cells | EPFL 参考 LUT-6 | 逻辑深度 (levels) |
+|---|---|---|---:|---:|---:|---:|---:|
+| `ctrl` | random_control | ALU 控制单元 | 7 | 26 | 306 | 29 | 2 |
+| `dec` | random_control | 二进制→独热译码器 | 8 | 256 | 312 | 287 | 2 |
+| `int2float` | random_control | 整数转浮点转换器 | 11 | 7 | 443 | 49 | 3 |
+| `cavlc` | random_control | H.264 CAVLC 编码控制 | 10 | 11 | 1279 | 122 | 4 |
+| `router` | random_control | Lookahead XY 路由器 | 60 | 30 | 459 | 89 | 7 |
+| `priority` | random_control | 优先级编码器 | 128 | 8 | 1907 | 210 | 31 |
+| `i2c` | random_control | I²C 控制器 | 147 | 142 | 2176 | 365 | 4 |
+| `adder` | arithmetic | 256 位进位链加法器 | 256 | 129 | 2162 | 254 | 51 |
+| `bar` | arithmetic | 桶形移位器 | 135 | 128 | 5263 | 512 | 4 |
+| `max` | arithmetic | 最大值选择 | 512 | 130 | 5383 | 842 | 56 |
 
-更重的算术件（`multiplier`/`hyp`/`log2`/`sqrt`/`div`/`square`）和重控制件（`arbiter`/`voter`/`mem_ctrl`）在清单中保留但默认注释，原因见 §6.4。
+> 端口与 LUT-6/levels 数据取自 EPFL 官方 README；"本实验门级 cells"为本实验在统一 RTLIL 口径下实测。注意 LUT-6 是 6 输入查找表映射后的规模，与本实验的 2 输入门 cell 数口径不同，二者不可直接相等，此处仅用于横向感知电路复杂度。
+
+**规模直观印象与选取理由：**
+
+- **跨度大**：从最小的 `ctrl`（7 输入 / 306 门）到 `max`（**512 个主输入**、5383 门）、`bar`（5263 门），规模跨越约 **17 倍**，覆盖了"小控制逻辑—中等控制器—大型算术件"的完整梯度。
+- **端口宽、组合深**：多条电路是**宽数据通路**——`adder` 256 输入 / 129 输出、`max` 512 输入、`i2c` 147 输入 / 142 输出；`adder`（51 级）、`max`（56 级）、`priority`（31 级）还具有**很深的组合逻辑级数**。正是这种"宽 + 深"的组合，使其优化与（尤其是）形式等价验证都极具挑战性（参见 §九难点）。
+- **门级数千**：`bar`/`max` 在 RTLIL 层均达 **5000+ cell**，`adder`/`i2c` 约 2000+ cell。在这种规模上做 SAT 形式等价，正是早期长期超时、最终靠算法与方法学改造才攻克的核心难点。
+
+更重的算术件（`multiplier`/`hyp`/`log2`/`sqrt`/`div`/`square`）和重控制件（`arbiter`/`voter`/`mem_ctrl`）在清单中保留但默认注释：它们要么等价不可判定（乘法器类，见 §6.4），要么超出当前 AST 路线稳健处理的范围，故不纳入本统计实验。
 
 ---
 
@@ -460,17 +475,27 @@ python tests/epfl/run_compare.py --mode prove --pipeline full --struct-threshold
 
 > 一句话总结这条难点：**它要求同时具备"性能复杂度分析、形式化正确性论证、核心数据结构重构、端到端等价验证"四种能力，缺一不可。**
 
-### 9.2 验证侧难点：大规模电路的形式等价"可行性"
+### 9.2 数据集本身的固有难度：规模大、组合深、且"故意未优化"
+
+本实验的难度在很大程度上是**由数据集本身决定的**，这也是其含金量所在：
+
+- **规模大、端口宽**：所选 10 条电路规模从 `ctrl` 的 306 门一路跨到 `bar`/`max` 的 **5000+ 门**（跨度约 17 倍），且多为宽数据通路——`max` 有 **512 个主输入**、`adder` 256 输入 / 129 输出、`i2c` 147 输入 / 142 输出。组合电路的形式等价检查复杂度对**输入位宽与逻辑深度高度敏感**，输入越多、逻辑锥越深，SAT 的搜索空间越是指数级膨胀。`adder`（51 级）、`max`（56 级）这类"又宽又深"的电路，正是把朴素 `equiv_simple` 直接拖入 30 分钟以上超时的根本原因——这并非工具实现不力，而是数据集刻意设置的高门槛。
+- **"故意未优化"的初始实现**：EPFL 官方明确声明这些电路的初始网表是**有意做成次优的**，专门用于"压榨"优化器。这意味着我们面对的不是"已经很难再优化的电路"，而是"被设计成有优化空间、但优化与验证都不轻松"的硬骨头——能在其上稳定取得平均约 20% 的面积收益，比在随手构造的电路上取得同等收益更有说服力。
+- **既要"优化得动"又要"证得了"的双重约束**：规模大带来两难——电路必须足够大才有统计意义和挑战性，但又不能大到（如 MtM 千万门级、或乘法器类）让等价检查彻底不可判定。在"有挑战性"与"可形式验证"之间圈定一个合适的子集，本身就是一项需要领域判断的实验设计难点（参见 §6.4 与 §9.5）。
+
+正是这种"规模—深度—未优化"三重难度叠加，使得本实验从一开始就不得不直面性能与可验证性的硬墙，也使最终"10/10 全部 SAT 形式等价通过 + 几何平均 0.804"的结果更具分量。
+
+### 9.3 验证侧难点：大规模电路的形式等价"可行性"
 
 - **直觉性的死路**：组合电路等价检查直觉上应"做完整 SAT"，但直接 `equiv_simple` 在多千门加法器上 SAT 爆炸（Debug >30 min），一度让我们认为"大电路只能退而求其次用结构等价代理"。
 - **关键洞察来之不易**：突破口是"**先 `equiv_struct` 合并两侧结构相同区域，只把真正分叉的逻辑锥交给 SAT**"。这个顺序看似简单，但需要理解 Yosys 等价引擎的内部机制才能想到——加上 Release 构建的算力，`adder` 从超时直接降到 43 s，进而使全部 10 条（含 5000+ cell）都拿到真 SAT 证明，彻底摆脱了"结构代理"这个较弱的退路。
 - **"超时"与"真不等价"的区分**：早期一次 `adder` 等价报 `FAIL`，险些被误判为"优化引入了功能错误"，事后查明只是 900 s 超时。这促使我们在脚本里把**证明超时降级为 `timeout`（状态仍 pass）**，避免性能问题污染正确性结论——这是一个重要的方法学修正。
 
-### 9.3 工程侧难点：构建配置的"沉默陷阱"
+### 9.4 工程侧难点：构建配置的"沉默陷阱"
 
 - 切到 `Release|x64` 时大面积 `C1083` 头文件找不到。难点在于其**报错信息（缺头文件）与根因（构建配置缺失）相距甚远**：真正原因是 `MyVSYosys.vcxproj` 只给 `Debug|Win32` 配了 `AdditionalIncludeDirectories` 与 `_YOSYS_` 等宏，其余三个配置组从未被正确填充。需要逐 `ItemDefinitionGroup` 比对才能定位，是典型的"配置漂移"问题。
 
-### 9.4 方法学与环境难点
+### 9.5 方法学与环境难点
 
 - **优化对比 vs 正确性证明的解耦**：最初把二者绑在一条流程里，导致"只想看 ratio"也要付出 SAT 的超时代价。后来在脚本里分出 `--mode measure`/`prove`，把"不需要证明的优化数据采集"与"昂贵的形式证明"解耦，整体效率才提上来。
 - **输出污染**：Yosys 启动动画含 ANSI 光标控制码，PowerShell 默认 UTF-16 落盘又会引入 null 字节，使日志解析屡屡踩坑。最终靠正则剥离 ANSI、统一 ASCII 落盘、以及优先用 `tee -o` / `stat` 文件而非抓取 stdout 才稳定下来。

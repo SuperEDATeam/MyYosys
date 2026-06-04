@@ -1,0 +1,23 @@
+# MyIR full pipeline template
+# Variables substituted at runtime:
+#   D:/MyVSYosys-pub/tests/epfl/lsils_benchmarks/arithmetic/bar.v    -- benchmark .v path
+#   D:/MyVSYosys-pub/tests/epfl/results/arithmetic_bar.v/myir.rtlil-- output RTLIL (gate-side, for equiv)
+#   D:/MyVSYosys-pub/tests/epfl/results/arithmetic_bar.v/myir.v    -- optimized Verilog
+#   D:/MyVSYosys-pub/tests/epfl/results/arithmetic_bar.v/myir.stat.txt -- file to capture 'stat' output
+#
+# AST-route flow:
+#   read_verilog -> myir_ast_import -> myir_opts -fixpoint
+#       -> myir_export -> opt_clean -> stat -> write_*
+#
+# This is the primary route the EPFL comparison evaluates.
+
+read_verilog D:/MyVSYosys-pub/tests/epfl/lsils_benchmarks/arithmetic/bar.v
+hierarchy -auto-top
+myir_ast_import
+myir_opts -fixpoint -stats
+myir_export
+proc
+opt_clean
+tee -o D:/MyVSYosys-pub/tests/epfl/results/arithmetic_bar.v/myir.stat.txt stat
+write_rtlil D:/MyVSYosys-pub/tests/epfl/results/arithmetic_bar.v/myir.rtlil
+write_verilog D:/MyVSYosys-pub/tests/epfl/results/arithmetic_bar.v/myir.v

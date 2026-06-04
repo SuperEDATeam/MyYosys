@@ -1,0 +1,11 @@
+bench,status,fail_stage,yosys_cells,myir_cells,ratio,yosys_wires,myir_wires,t_yosys_s,t_myir_s,t_equiv_s,equiv,notes
+dec,pass,,312,316,1.013,320,324,3.01,3.04,3.03,PASS,
+int2float,pass,,443,346,0.781,454,357,3.02,3.02,3.04,PASS,
+ctrl,pass,,306,273,0.892,314,281,3.01,3.06,3.00,PASS,
+cavlc,pass,,1279,943,0.737,1289,953,3.12,3.38,3.24,PASS,
+priority,pass,,1907,1555,0.815,2035,1683,3.17,6.33,7.64,PASS,
+router,pass,,459,363,0.791,546,450,3.00,3.32,3.31,PASS,
+i2c,pass,,2176,1898,0.872,2338,2060,3.20,3.75,3.48,PASS,
+adder,pass,,2162,1655,0.765,2418,1911,3.17,3.73,12.98,PASS,
+bar,pass,,5263,3408,0.648,5398,3543,3.64,5.27,8.82,PASS,
+max,pass,,5383,4190,0.778,5895,4702,3.63,6.93,310.74,PASS,

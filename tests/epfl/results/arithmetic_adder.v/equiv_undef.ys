@@ -1,0 +1,14 @@
+read_rtlil D:/MyVSYosys-pub/tests/epfl/results/arithmetic_adder.v/yosys.rtlil
+rename top gold
+design -stash gold
+
+read_rtlil D:/MyVSYosys-pub/tests/epfl/results/arithmetic_adder.v/myir.rtlil
+rename top gate
+design -stash gate
+
+design -copy-from gold -as gold gold
+design -copy-from gate -as gate gate
+
+equiv_make gold gate equiv
+equiv_simple -undef equiv
+equiv_status -assert equiv

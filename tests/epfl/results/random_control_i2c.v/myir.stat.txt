@@ -1,0 +1,17 @@
+
+44. Printing statistics.
+
+=== i2c ===
+
+   Number of wires:               2060
+   Number of wire bits:           2060
+   Number of public wires:        1372
+   Number of public wire bits:    1372
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               1898
+     $and                          764
+     $not                          556
+     $or                           578
+

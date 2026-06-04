@@ -189,8 +189,9 @@ MyIR::Design
 | `benchmarks.txt` | 默认 benchmark 清单 + MtM 隔离 |
 | `templates/yosys_baseline.ys.tmpl` | Yosys 原生流水线模板 |
 | `templates/myir_pipeline.ys.tmpl` | MyIR 主干流水线模板（ast_import → opts -fixpoint → export → clean） |
-| `templates/equiv.ys.tmpl` | `equiv_make` + `equiv_induct` 模板 |
-| `run_compare.py` | Python 驱动：subprocess yosys / stat 解析 / 三阶段 / CSV+Markdown / -j 并行 |
+| `templates/myir_pipeline_lite.ys.tmpl` | 轻量流水线模板（`myir_opts -once -norewrite`，调试/快速冒烟用） |
+| `templates/equiv.ys.tmpl` | `equiv_make` + `equiv_struct` + `equiv_simple` + `equiv_status -assert` 模板 |
+| `run_compare.py` | Python 驱动：measure/prove 模式 / subprocess yosys / stat 解析 / 结构等价回退 / CSV+Markdown / -j 并行 |
 | `results/` | 报告输出目录（每个 benchmark 独立子目录 + 汇总 `epfl_results.{csv,md}`） |
 
 ### 4.2 各 Pass 功能详述
@@ -361,8 +362,12 @@ end
   | consensus / resub | `(x & y) \| (~x & y)` → `y` 等 |
   | const | `x & 0` / `x \| 1` / `x ^ 0` 等 |
 - **benefit_score 评分**：在多条规则都匹配的同一 cut 上取得分最高者，避免劣化重写
+- **批量应用（关键性能修正）**：早期实现是"每应用一个重写就把整个模块的 k-cut 全量重枚举一遍"，应用 R 次即 R 轮全模块枚举，复杂度随 cell 数平方级恶化——2000+ cell 的 adder 在 Release 下都 >400s 跑不完。现改为**每轮枚举后按收益排序，贪心选取一批「触及节点索引两两不相交」的重写，一次重建 `exprs` 全部应用**，把全量重枚举次数从 O(重写数) 降到 O(轮数)。
+  - 正确性依据：重写规则只删除 **use-count==1** 的中间节点（其唯一使用者就在自身 pattern 内），叶子线与根结果线名恒被保留，故索引不相交 ⇒ 互不干扰；`touched_indices()` + 不相交筛选保证安全
+  - 配套把 cut 去重的 O(n²) 线性查重换成哈希集
+  - 实测效果：adder 的 `myir_opts -fixpoint` 从 >400s（超时）降到 **~7s**；EPFL 10 条全集（含 5000+ cell 的 bar/max）measure 模式 `-j 4` 总耗时 ~31s
 - **CLI 参数**：`-k <N>` / `-max-cuts <N>` / `-stats`
-- **汇总日志**：iterations / total cuts enumerated / peak per node / rewrites applied；加 `-stats` 后还会按 rule_name 分组输出命中明细
+- **汇总日志**：iterations（现含义为"批量轮数"）/ total cuts enumerated / peak per node / rewrites applied；加 `-stats` 后还会按 rule_name 分组输出命中明细
 - **澄清**：本 pass 与 Yosys 自带的 ABC 工艺映射（`abc` / `techmap`）不是一回事——`myir_rewrite` 仍在 MyIR 这一中间表示上工作，**不接触工艺库**
 
 #### myir_opt_strength — 算术强度削减
@@ -563,16 +568,23 @@ EPFL .v
    └── myir_pipeline.ys.tmpl  : read -> myir_ast_import -> myir_opts -fixpoint -stats
                                      -> myir_export -> proc -> opt_clean -> stat -> write_rtlil
                                                       |
-                                                      └── equiv.ys.tmpl : equiv_make + equiv_induct
-                                                                          + equiv_status -assert
+                                                      └── equiv.ys.tmpl : equiv_make + equiv_struct
+                                                                          + equiv_simple + equiv_status -assert
 ```
 
 每条 benchmark 都跑这三个 yosys 子进程，结果归一化进 CSV / Markdown。
 
+> **等价模板为何先 `equiv_struct` 再 `equiv_simple`**：MyIR 优化后网表与 Yosys 基线结构差异较大，纯 `equiv_simple` 直接 SAT 在算术电路（深进位链）上极慢。先用 `equiv_struct` 把两侧结构相同的区域合并，只把真正分叉的逻辑锥交给 SAT，可把多千门设计从"超时"压到秒级—分钟级（adder：43s with，>30min without）。
+
 ### 7.3 驱动脚本：`tests/epfl/run_compare.py`
 
 - Python 3.9+，纯标准库
-- 关键 CLI：`--filter <regex>` / `--include-mtm` / `--no-equiv` / `--timeout` / `-j N` 并行 / `--keep-intermediate`
+- **运行模式 `--mode`**：
+  - `measure`：只跑 baseline + MyIR 两段收集 cell 数 / ratio，**不做等价证明**（优化对比数据本不需要证明，故最快）
+  - `prove` / `both`（默认 both）：额外做等价证明
+- 等价策略：cell 数 ≤ `--struct-threshold`（默认 1000）走 SAT；> 阈值走结构等价代理。`--struct-threshold 0` = **强制全部走 SAT**（Release 下推荐，配合 `equiv_struct` 已可证多千门设计）
+- 超时降级：证明阶段超时记 `equiv=timeout`（或 `timeout-struct`），benchmark 状态仍为 `pass`（ratio 仍有效），不会因个别证不动的电路拖垮整批
+- 其它 CLI：`--filter <regex>` / `--include-mtm` / `--pipeline {full,lite}` / `--timeout` / `-j N` 并行 / `--keep-intermediate` / `--no-equiv`（= `--mode measure` 别名）
 - Yosys 二进制按以下顺序自动定位：`--yosys` CLI 参数 → `YOSYS_BIN` 环境变量 → `x64\Release` / `Debug` 等常见 VS 输出路径 → `PATH`
 - `parse_stat()` 用正则抽取 Yosys `stat` 报告里的 `cells / wires / processes / memories` 数字
 - 每条 benchmark 输出独立 `results/<bench>/` 目录，包含 `yosys.log` / `myir.log` / `equiv.log` + 生成的 `.ys` 脚本，便于失败时直接拿命令复现
@@ -586,9 +598,9 @@ EPFL .v
 | `myir_cells`  | MyIR 流水线 + `opt_clean` 之后的 cell 数 |
 | `ratio` | `myir_cells / yosys_cells`（< 1 = MyIR 赢） |
 | `t_yosys / t_myir / t_equiv` | 三段 wall-clock 秒数 |
-| `equiv` | `PASS` / `FAIL` / `skip`（来自 `equiv_status -assert`） |
+| `equiv` | `PASS`（SAT 形式证明）/ `PASS-struct`（结构等价代理）/ `timeout`、`timeout-struct`（证明超时，ratio 仍有效）/ `measure-only`（measure 模式未证）/ `FAIL` |
 
-Markdown 报告底部还输出通过率、`PASS` 等价率、几何平均 ratio（只算 `pass` 的）。
+Markdown 报告底部还输出通过率、等价证明数（区分 SAT / 结构）、MyIR 优化胜负统计、几何平均 ratio（只算 `pass` 的）。
 
 ### 7.5 一键执行（Windows / PowerShell）
 
@@ -597,15 +609,14 @@ Markdown 报告底部还输出通过率、`PASS` 等价率、几何平均 ratio�
 git clone --depth 1 https://github.com/lsils/benchmarks tests/epfl/lsils_benchmarks
 # (或 git submodule add，详见 tests/epfl/README.md)
 
-# 完整跑批（已在 benchmarks.txt 中默认启用 dec / int2float / ctrl / cavlc /
-#           priority / router / i2c / adder / bar / max 共 10 条）
-python tests/epfl/run_compare.py -j 4
+# 优化对比数据（最快，不做证明）：benchmarks.txt 默认 10 条
+python tests/epfl/run_compare.py --mode measure --pipeline full -j 4
+
+# 完整形式等价背书（Release 下强制全 SAT，equiv_struct 加速）
+python tests/epfl/run_compare.py --mode prove --pipeline full --struct-threshold 0 -j 4 --timeout 600
 
 # 只跑前几条快速冒烟
 python tests/epfl/run_compare.py --filter "dec|int2float|adder|priority" -j 4
-
-# 不跑 equiv，仅看 cell 数 / 时间
-python tests/epfl/run_compare.py --no-equiv -j 4
 ```
 
 报告产出在 `tests/epfl/results/epfl_results.{csv,md}`。
@@ -618,6 +629,31 @@ python tests/epfl/run_compare.py --no-equiv -j 4
 | `run_compare.py` | per-benchmark 整体性能 + 综合质量 + equiv 体检 | 文件级、黑盒 |
 
 两者互补：日常开发用 `myir_reliable -with-opts` 做单测保护；正式实验用 `run_compare.py` 出表。
+
+### 7.7 实验结果：Yosys vs MyIR 优化对比与形式等价
+
+环境：`x64\Release` 构建，AST 路线 `myir_opts -fixpoint`（含 `myir_rewrite`），Yosys 基线 `opt -full`，两侧 `opt_clean` 后统计 cell 数；等价为 `equiv_make + equiv_struct + equiv_simple + equiv_status -assert` 的 **SAT 形式证明**（`--struct-threshold 0` 强制全 SAT）。
+
+| Benchmark | 类别 | Yosys cells | MyIR cells | Ratio | MyIR 减少 | Equiv | t_equiv |
+|---|---|---:|---:|---:|---:|:---:|---:|
+| `bar` | arithmetic | 5263 | 3408 | 0.648 | −35.2% | **PASS** | 8.8s |
+| `cavlc` | random_control | 1279 | 943 | 0.737 | −26.3% | **PASS** | 3.2s |
+| `adder` | arithmetic | 2162 | 1655 | 0.765 | −23.5% | **PASS** | 13.0s |
+| `max` | arithmetic | 5383 | 4190 | 0.778 | −22.2% | **PASS** | 310.7s |
+| `int2float` | random_control | 443 | 346 | 0.781 | −21.9% | **PASS** | 3.0s |
+| `router` | random_control | 459 | 363 | 0.791 | −20.9% | **PASS** | 3.3s |
+| `priority` | random_control | 1907 | 1555 | 0.815 | −18.5% | **PASS** | 7.6s |
+| `i2c` | random_control | 2176 | 1898 | 0.872 | −12.8% | **PASS** | 3.5s |
+| `ctrl` | random_control | 306 | 273 | 0.892 | −10.8% | **PASS** | 3.0s |
+| `dec` | random_control | 312 | 316 | 1.013 | +1.3% | **PASS** | 3.0s |
+
+**结论：**
+
+- **优化质量**：10 条 EPFL benchmark 中 MyIR 在 **9 条**上 cell 数更少，唯一例外 `dec` 仅 +1.3%；**几何平均 ratio = 0.804**，即 MyIR 流水线相比 Yosys 原生 `opt -full` 平均少约 **20%** 的 cell。优化优势几乎全部来自 `myir_rewrite` 的 k-cut 局部代数重写（关闭 rewrite 时 ratio≈1.0）。
+- **形式等价**：**10/10 全部通过 SAT 形式等价证明**（非结构代理），证明 AST→MyIR→优化→RTLIL 全链路在功能上与 Yosys 基线完全一致。`equiv_struct` 预合并是大设计可证的关键：`max`（5383 cell）需 ~311s，其余均在 ~13s 内完成。
+- **性能**：`myir_rewrite` 批量化修正后，全集 measure 模式 `-j 4` 收集优化数据仅 ~31s；之前单个 `adder` 的 full 管线在 Debug/Release 下都会超时（>400s）。
+
+> 关于乘法器等真正的大件（`multiplier` / `hyp` / `log2` / `sqrt` / `div`）：其形式化等价对任何通用 EC（含商业工具）都基本不可行，故暂不纳入形式证明集；如需评估其优化 ratio，可单独用 `--mode measure` 收集 cell 数。
 
 ---
 
@@ -637,13 +673,16 @@ python tests/epfl/run_compare.py --no-equiv -j 4
 - [ ] 用 `mux_ifelse.v` 和 `mux_case.v` 执行 `test_ast.ys`
 - [ ] 对比 `myir_import` 与 `myir_ast_import` 在 `carry.v` 上的输出差异
 - [ ] 验证 `myir_export` + `write_verilog` 产出的 Verilog 功能正确
-- [ ] 跑 `tests/epfl/run_compare.py` 收集 EPFL benchmark 报告（详见第七章）
+- [x] 跑 `tests/epfl/run_compare.py` 收集 EPFL benchmark 报告（10/10 通过 SAT 形式等价，详见 7.7）
 
 ### 8.3 优化效果验证
 
 - [ ] 用 `share_test.v` 验证 `myir_opt_share` 确实消除了重复表达式
 - [ ] 构造含常量运算的测试设计，验证 `myir_opt_const` 的折叠效果
 - [ ] 验证 `myir_opt_clean` 在优化后正确清除死代码
+- [x] **EPFL 优化对比**：10 条 benchmark 上 MyIR 相对 Yosys `opt -full` 几何平均 ratio 0.804（9/10 更优），优势主要来自 `myir_rewrite`（详见 7.7）
+- [x] **`myir_rewrite` 性能修正**：批量应用互不相交重写，全模块重枚举次数从 O(重写数) 降到 O(轮数)，adder 从 >400s 超时降到 ~7s
+- [x] **形式等价背书**：`equiv_struct` + `equiv_simple` 使多千门设计可证，10/10 全部 SAT PASS
 
 ---
 

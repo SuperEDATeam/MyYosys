@@ -1,0 +1,33 @@
+# Formal equivalence check template (combinational benchmarks).
+# Variables substituted at runtime:
+#   D:/MyVSYosys-pub/tests/epfl/results/arithmetic_adder.v/yosys.rtlil-- baseline Yosys RTLIL
+#   D:/MyVSYosys-pub/tests/epfl/results/arithmetic_adder.v/myir.rtlil-- MyIR-pipeline RTLIL
+#   top       -- top module name (Yosys-style, without leading backslash)
+#
+# EPFL combinational benchmarks have no flip-flops; equiv_simple
+# alone constitutes a complete proof.  equiv_induct is intended
+# for sequential designs with feedback and on multi-thousand-cell
+# combinational adders it can take 15+ minutes without adding any
+# new coverage, so we deliberately skip it here.
+
+read_rtlil D:/MyVSYosys-pub/tests/epfl/results/arithmetic_adder.v/yosys.rtlil
+rename top gold
+design -stash gold
+
+read_rtlil D:/MyVSYosys-pub/tests/epfl/results/arithmetic_adder.v/myir.rtlil
+rename top gate
+design -stash gate
+
+design -copy-from gold -as gold gold
+design -copy-from gate -as gate gate
+
+equiv_make gold gate equiv
+
+# equiv_struct first merges the structurally-identical regions of the two
+# netlists, leaving only the genuinely diverged cones for the SAT engine.
+# This is what makes multi-thousand-cell designs (where the MyIR-optimized
+# netlist differs substantially from Yosys's) provable in seconds-to-minutes
+# instead of timing out (e.g. adder: 43s with, >30min without).
+equiv_struct equiv
+equiv_simple equiv
+equiv_status -assert equiv

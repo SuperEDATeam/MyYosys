@@ -1,0 +1,17 @@
+
+32. Printing statistics.
+
+=== dec ===
+
+   Number of wires:                324
+   Number of wire bits:            324
+   Number of public wires:         312
+   Number of public wire bits:     312
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                316
+     $and                          300
+     $not                           12
+     $or                             4
+

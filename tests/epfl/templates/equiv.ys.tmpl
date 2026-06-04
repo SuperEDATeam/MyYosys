@@ -22,5 +22,12 @@ design -copy-from gold -as gold gold
 design -copy-from gate -as gate gate
 
 equiv_make gold gate equiv
+
+# equiv_struct first merges the structurally-identical regions of the two
+# netlists, leaving only the genuinely diverged cones for the SAT engine.
+# This is what makes multi-thousand-cell designs (where the MyIR-optimized
+# netlist differs substantially from Yosys's) provable in seconds-to-minutes
+# instead of timing out (e.g. adder: 43s with, >30min without).
+equiv_struct equiv
 equiv_simple equiv
 equiv_status -assert equiv

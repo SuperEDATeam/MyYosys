@@ -4,6 +4,7 @@
 #include <map>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 
 USING_YOSYS_NAMESPACE
 PRIVATE_NAMESPACE_BEGIN
@@ -175,22 +176,18 @@ static std::string cut_key(const CutInfo &cut)
     return key;
 }
 
-static void append_unique_cut(std::vector<CutInfo> &cuts, const CutInfo &cut)
-{
-    std::string key = cut_key(cut);
-    for (const auto &existing : cuts)
-        if (cut_key(existing) == key)
-            return;
-
-    cuts.push_back(cut);
-}
-
 static void combine_cut_options(const std::vector<std::vector<CutInfo>> &options,
                                 int pos, int k, CutInfo current,
-                                std::vector<CutInfo> &combined)
+                                std::vector<CutInfo> &combined,
+                                std::unordered_set<std::string> &seen)
 {
     if (pos == (int)options.size()) {
-        append_unique_cut(combined, current);
+        // Dedup via a hash set of cut keys instead of an O(n^2) linear scan;
+        // on wide designs a node can produce thousands of intermediate cut
+        // combinations and the quadratic check dominated runtime.
+        std::string key = cut_key(current);
+        if (seen.insert(key).second)
+            combined.push_back(current);
         return;
     }
 
@@ -201,7 +198,7 @@ static void combine_cut_options(const std::vector<std::vector<CutInfo>> &options
             continue;
 
         merged.nodes.insert(opt.nodes.begin(), opt.nodes.end());
-        combine_cut_options(options, pos + 1, k, merged, combined);
+        combine_cut_options(options, pos + 1, k, merged, combined, seen);
     }
 }
 
@@ -262,7 +259,8 @@ static std::vector<CutInfo> enumerate_cuts_rec(
     }
 
     std::vector<CutInfo> cuts;
-    combine_cut_options(operand_options, 0, k, CutInfo(), cuts);
+    std::unordered_set<std::string> seen;
+    combine_cut_options(operand_options, 0, k, CutInfo(), cuts, seen);
 
     for (auto &cut : cuts)
         cut.nodes.insert(idx);
@@ -884,23 +882,26 @@ static bool try_consensus_rule(const MyIR::Module &m, int idx,
     return false;
 }
 
-static bool find_rewrite_candidate(
+// Collect the single best matching rewrite for *each* root expression (a
+// given root can host at most one rewrite, so we keep its highest-scoring
+// match across all of its cuts).  Returned unsorted; the caller ranks and
+// greedily picks a non-overlapping batch.
+static void find_all_rewrite_candidates(
     const MyIR::Module &m, int k,
     const std::unordered_map<std::string, int> &producer,
     const std::unordered_map<std::string, int> &uses,
     const std::map<int, std::vector<CutInfo>> &all_cuts,
-    RewriteCandidate &cand)
+    std::vector<RewriteCandidate> &out)
 {
-    bool found = false;
-    RewriteCandidate best;
-
     for (int idx = 0; idx < (int)m.exprs.size(); idx++)
     {
         auto cut_it = all_cuts.find(idx);
         if (cut_it == all_cuts.end())
             continue;
 
-        const MyIR::Expr &root = m.exprs[idx];
+        bool found = false;
+        RewriteCandidate best;
+
         for (const auto &cut : cut_it->second)
         {
             if ((int)cut.leaves.size() > k)
@@ -925,153 +926,57 @@ static bool find_rewrite_candidate(
                 found = true;
             }
         }
-    }
 
-    if (found)
-        cand = best;
-    return found;
+        if (found)
+            out.push_back(best);
+    }
 }
 
-static void apply_redirect_rewrite(MyIR::Module &m, const RewriteCandidate &cand)
+// All expression indices a candidate reads or rewrites.  Two candidates whose
+// touched sets are disjoint can be applied together in one rebuild: rewrite
+// rules only delete intermediate nodes whose use-count is exactly 1 (their
+// sole user lives inside the same pattern), while leaf wires and the root
+// result wire are always preserved, so disjoint index sets cannot interfere.
+static std::set<int> touched_indices(const RewriteCandidate &cand)
+{
+    if (cand.kind == RewriteKind::Factor)
+        return { cand.root_idx, cand.lhs_idx, cand.rhs_idx };
+    return cand.remove_nodes;   // redirect: root + nested nodes already included
+}
+
+// A deferred batch of rewrites: drop `remove` indices, swap `replace` indices
+// for their new expr list, and append `connects`.  Building a plan instead of
+// mutating m.exprs immediately lets us apply many non-overlapping rewrites in
+// a single rebuild (one O(E) pass) rather than re-enumerating every cut after
+// each individual rewrite.
+struct RewritePlan {
+    std::set<int> remove;
+    std::map<int, std::vector<MyIR::Expr>> replace;
+    std::vector<MyIR::Assign> connects;
+};
+
+static void plan_redirect_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
+                                  RewritePlan &plan)
 {
     const MyIR::Expr &root = m.exprs[cand.root_idx];
 
-    std::vector<MyIR::Expr> new_exprs;
-    new_exprs.reserve(m.exprs.size());
-    for (int i = 0; i < (int)m.exprs.size(); i++)
-        if (!cand.remove_nodes.count(i))
-            new_exprs.push_back(m.exprs[i]);
-    m.exprs.swap(new_exprs);
+    for (int i : cand.remove_nodes)
+        plan.remove.insert(i);
 
     if (root.result_wire != cand.redirect_target) {
         MyIR::Assign a;
         a.lhs = root.result_wire;
         a.rhs = cand.redirect_target;
-        m.connects.push_back(a);
+        plan.connects.push_back(a);
     }
-
-    log("  [rewrite] k-cut{%d} %s in module '%s': %s -> %s\n",
-        (int)cand.cut.leaves.size(),
-        cand.rule_name.c_str(),
-        m.name.c_str(),
-        root.result_wire.c_str(),
-        cand.redirect_target.c_str());
-    log("    benefit score = %d\n", cand.score);
 }
 
-static void apply_factor_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
-                                 int &rewrite_counter)
+static void plan_factor_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
+                                int &rewrite_counter, RewritePlan &plan)
 {
     const MyIR::Expr old_root = m.exprs[cand.root_idx];
 
-    if (cand.rule_name == "demorgan_or" || cand.rule_name == "demorgan_and") {
-        std::string temp = fresh_wire_name(m, rewrite_counter);
-
-        MyIR::Port w;
-        w.name = temp;
-        w.dir = MyIR::PortDir::Internal;
-        w.width = old_root.result_width;
-        m.wires[temp] = w;
-
-        MyIR::Expr inner;
-        inner.op = old_root.op == MyIR::OpType::Or ? MyIR::OpType::And
-                                                   : MyIR::OpType::Or;
-        inner.result_wire = temp;
-        inner.result_width = old_root.result_width;
-        inner.operands.push_back(cand.lhs_other);
-        inner.operands.push_back(cand.rhs_other);
-
-        MyIR::Expr new_root;
-        new_root.op = MyIR::OpType::Not;
-        new_root.result_wire = old_root.result_wire;
-        new_root.result_width = old_root.result_width;
-        new_root.operands.push_back(temp);
-
-        std::vector<MyIR::Expr> new_exprs;
-        new_exprs.reserve(m.exprs.size() - 1);
-
-        for (int i = 0; i < (int)m.exprs.size(); i++) {
-            if (i == cand.lhs_idx || i == cand.rhs_idx)
-                continue;
-
-            if (i == cand.root_idx) {
-                new_exprs.push_back(inner);
-                new_exprs.push_back(new_root);
-            } else {
-                new_exprs.push_back(m.exprs[i]);
-            }
-        }
-
-        m.exprs.swap(new_exprs);
-
-        log("  [rewrite] k-cut{%d} %s in module '%s': "
-            "%s(%s, %s) -> Not(%s)\n",
-            (int)cand.cut.leaves.size(),
-            cand.rule_name.c_str(),
-            m.name.c_str(),
-            MyIR::optype_to_string(old_root.op),
-            old_root.operands[0].c_str(),
-            old_root.operands[1].c_str(),
-            temp.c_str());
-        log("    benefit score = %d\n", cand.score);
-        return;
-    }
-
-    if (cand.rule_name == "resub_or" || cand.rule_name == "resub_and") {
-        std::string temp = fresh_wire_name(m, rewrite_counter);
-
-        MyIR::Port w;
-        w.name = temp;
-        w.dir = MyIR::PortDir::Internal;
-        w.width = old_root.result_width;
-        m.wires[temp] = w;
-
-        MyIR::Expr inner;
-        inner.op = cand.rule_name == "resub_or" ? MyIR::OpType::Or
-                                                : MyIR::OpType::And;
-        inner.result_wire = temp;
-        inner.result_width = old_root.result_width;
-        inner.operands.push_back(cand.lhs_other);
-        inner.operands.push_back(cand.rhs_other);
-
-        std::vector<MyIR::Expr> new_exprs;
-        new_exprs.reserve(m.exprs.size() - 1);
-        std::set<int> remove_nodes = {cand.rhs_idx, cand.lhs_idx};
-
-        for (int i = 0; i < (int)m.exprs.size(); i++) {
-            if (remove_nodes.count(i))
-                continue;
-
-            if (i == cand.root_idx) {
-                MyIR::Expr new_root;
-                new_root.op = MyIR::OpType::Buf;
-                new_root.result_wire = old_root.result_wire;
-                new_root.result_width = old_root.result_width;
-                new_root.operands.push_back(temp);
-                new_exprs.push_back(inner);
-                new_exprs.push_back(new_root);
-            } else {
-                new_exprs.push_back(m.exprs[i]);
-            }
-        }
-
-        m.exprs.swap(new_exprs);
-
-        log("  [rewrite] k-cut{%d} %s in module '%s': result uses %s(%s, %s)\n",
-            (int)cand.cut.leaves.size(),
-            cand.rule_name.c_str(),
-            m.name.c_str(),
-            MyIR::optype_to_string(inner.op),
-            cand.lhs_other.c_str(),
-            cand.rhs_other.c_str());
-        log("    benefit score = %d\n", cand.score);
-        return;
-    }
-
-    const MyIR::Expr old_lhs = m.exprs[cand.lhs_idx];
-
     std::string temp = fresh_wire_name(m, rewrite_counter);
-
     MyIR::Port w;
     w.name = temp;
     w.dir = MyIR::PortDir::Internal;
@@ -1079,56 +984,77 @@ static void apply_factor_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
     m.wires[temp] = w;
 
     MyIR::Expr inner;
-    inner.op = old_root.op;
     inner.result_wire = temp;
     inner.result_width = old_root.result_width;
     inner.operands.push_back(cand.lhs_other);
     inner.operands.push_back(cand.rhs_other);
 
-    MyIR::Expr new_root = old_root;
-    new_root.op = old_lhs.op;
-    new_root.operands.clear();
-    new_root.operands.push_back(cand.common);
-    new_root.operands.push_back(temp);
+    MyIR::Expr new_root;
+    new_root.result_wire = old_root.result_wire;
+    new_root.result_width = old_root.result_width;
 
-    std::vector<MyIR::Expr> new_exprs;
-    new_exprs.reserve(m.exprs.size() - 1);
-
-    for (int i = 0; i < (int)m.exprs.size(); i++) {
-        if (i == cand.lhs_idx || i == cand.rhs_idx)
-            continue;
-
-        if (i == cand.root_idx) {
-            new_exprs.push_back(inner);
-            new_exprs.push_back(new_root);
-        } else {
-            new_exprs.push_back(m.exprs[i]);
-        }
+    if (cand.rule_name == "demorgan_or" || cand.rule_name == "demorgan_and") {
+        inner.op = old_root.op == MyIR::OpType::Or ? MyIR::OpType::And
+                                                   : MyIR::OpType::Or;
+        new_root.op = MyIR::OpType::Not;
+        new_root.operands.push_back(temp);
+    } else if (cand.rule_name == "resub_or" || cand.rule_name == "resub_and") {
+        inner.op = cand.rule_name == "resub_or" ? MyIR::OpType::Or
+                                                : MyIR::OpType::And;
+        new_root.op = MyIR::OpType::Buf;
+        new_root.operands.push_back(temp);
+    } else {
+        // distributive factor: parent.op stays, inner takes the parent op
+        const MyIR::Expr &old_lhs = m.exprs[cand.lhs_idx];
+        inner.op = old_root.op;
+        new_root = old_root;
+        new_root.op = old_lhs.op;
+        new_root.operands.clear();
+        new_root.operands.push_back(cand.common);
+        new_root.operands.push_back(temp);
     }
 
-    m.exprs.swap(new_exprs);
-
-    log("  [rewrite] k-cut{%d} %s in module '%s': "
-        "%s(%s, %s) -> %s(%s, %s)\n",
-        (int)cand.cut.leaves.size(),
-        cand.rule_name.c_str(),
-        m.name.c_str(),
-        MyIR::optype_to_string(old_root.op),
-        old_root.operands[0].c_str(),
-        old_root.operands[1].c_str(),
-        MyIR::optype_to_string(new_root.op),
-        new_root.operands[0].c_str(),
-        new_root.operands[1].c_str());
-    log("    benefit score = %d\n", cand.score);
+    plan.remove.insert(cand.lhs_idx);
+    plan.remove.insert(cand.rhs_idx);
+    plan.replace[cand.root_idx] = { inner, new_root };
 }
 
-static void apply_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
-                          int &rewrite_counter)
+static void plan_rewrite(MyIR::Module &m, const RewriteCandidate &cand,
+                         int &rewrite_counter, RewritePlan &plan)
 {
     if (cand.kind == RewriteKind::Factor)
-        apply_factor_rewrite(m, cand, rewrite_counter);
+        plan_factor_rewrite(m, cand, rewrite_counter, plan);
     else
-        apply_redirect_rewrite(m, cand);
+        plan_redirect_rewrite(m, cand, plan);
+}
+
+// Rebuild m.exprs once, applying every queued remove/replace, then append the
+// queued connects.  `replace` always takes precedence over `remove` for the
+// same index (a factor root is replaced, not dropped); non-overlapping
+// candidate selection guarantees an index never appears in both for distinct
+// candidates.
+static void apply_plan(MyIR::Module &m, const RewritePlan &plan)
+{
+    if (plan.remove.empty() && plan.replace.empty() && plan.connects.empty())
+        return;
+
+    std::vector<MyIR::Expr> new_exprs;
+    new_exprs.reserve(m.exprs.size() + plan.replace.size());
+    for (int i = 0; i < (int)m.exprs.size(); i++) {
+        auto rit = plan.replace.find(i);
+        if (rit != plan.replace.end()) {
+            for (const auto &e : rit->second)
+                new_exprs.push_back(e);
+            continue;
+        }
+        if (plan.remove.count(i))
+            continue;
+        new_exprs.push_back(m.exprs[i]);
+    }
+    m.exprs.swap(new_exprs);
+
+    for (const auto &a : plan.connects)
+        m.connects.push_back(a);
 }
 
 } // namespace
@@ -1177,10 +1103,14 @@ struct MyIRRewritePass : public Pass {
         log("  !!x                ->  x\n");
         log("  x & 0 / x | 0 / x & 1 / x | 1 / x ^ 0\n");
         log("\n");
-        log("The pass precomputes cuts up to k leaves, scores all matching\n");
-        log("local rewrites, and applies the highest-benefit positive\n");
-        log("candidate. The process is repeated until no more profitable\n");
-        log("rule matches remain.\n");
+        log("The pass precomputes cuts up to k leaves and scores all matching\n");
+        log("local rewrites.  Each round it ranks candidates by benefit and\n");
+        log("greedily applies a maximal batch whose touched nodes are pairwise\n");
+        log("disjoint, then re-enumerates and repeats until no profitable rule\n");
+        log("matches remain.  Batching keeps the number of full cut\n");
+        log("re-enumerations proportional to the number of rounds rather than\n");
+        log("the number of individual rewrites, which is what makes\n");
+        log("multi-thousand-cell designs tractable.\n");
         log("\n");
     }
 
@@ -1246,18 +1176,49 @@ struct MyIRRewritePass : public Pass {
                     max_peak_cuts = stats.peak_cuts_per_node;
                 total_truncated_nodes += stats.truncated_nodes;
 
-                RewriteCandidate cand;
+                std::vector<RewriteCandidate> cands;
+                find_all_rewrite_candidates(m, k, producer, uses, all_cuts, cands);
 
-                if (!find_rewrite_candidate(m, k, producer, uses, all_cuts, cand)) {
+                if (cands.empty()) {
                     log("  [rewrite] module '%s': enumerated %d cut(s) with k=%d, "
                         "no more matches.\n",
                         m.name.c_str(), this_cuts, k);
                     break;
                 }
 
-                apply_rewrite(m, cand, rewrite_counter);
-                rule_hits[cand.rule_name]++;
-                total++;
+                // Highest-benefit first, then greedily pick a maximal set of
+                // candidates whose touched node-index sets are pairwise
+                // disjoint, and apply them all in one rebuild.  This collapses
+                // the number of full cut re-enumerations from O(#rewrites) to
+                // O(#rounds), which is what made multi-thousand-cell designs
+                // intractable before.
+                std::sort(cands.begin(), cands.end(),
+                          [](const RewriteCandidate &a, const RewriteCandidate &b) {
+                              return a.score > b.score;
+                          });
+
+                RewritePlan plan;
+                std::set<int> used;
+                int applied = 0;
+                for (const auto &cand : cands) {
+                    std::set<int> touched = touched_indices(cand);
+                    bool conflict = false;
+                    for (int x : touched)
+                        if (used.count(x)) { conflict = true; break; }
+                    if (conflict)
+                        continue;
+
+                    used.insert(touched.begin(), touched.end());
+                    plan_rewrite(m, cand, rewrite_counter, plan);
+                    rule_hits[cand.rule_name]++;
+                    total++;
+                    applied++;
+                }
+
+                apply_plan(m, plan);
+
+                if (applied == 0)
+                    break;       // safety: no progress this round
             }
         }
 

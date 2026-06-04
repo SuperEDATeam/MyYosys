@@ -1,0 +1,25 @@
+digraph "_carry" {
+  rankdir=LR;
+  label="carry";
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontsize=8];
+
+  "w__and_passes/myir/tests/carry.v:6_1_Y" [label="and$passes/myir/tests/carry.v:6$1_Y\n1 bit", shape=ellipse];
+  "w__or_passes/myir/tests/carry.v:7_2_Y" [label="or$passes/myir/tests/carry.v:7$2_Y\n1 bit", shape=ellipse];
+  "w__a" [label="a\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__b" [label="b\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__c" [label="c\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__cout" [label="cout\n1 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+  "w__x" [label="x\n1 bit", shape=ellipse];
+
+  "e_0" [label="Or", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__x" -> "e_0";
+  "w__c" -> "e_0";
+  "e_0" -> "w__or_passes/myir/tests/carry.v:7_2_Y";
+  "e_1" [label="And", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__a" -> "e_1";
+  "w__b" -> "e_1";
+  "e_1" -> "w__and_passes/myir/tests/carry.v:6_1_Y";
+  "w__and_passes/myir/tests/carry.v:6_1_Y" -> "w__x" [style=dashed, color=gray];
+  "w__or_passes/myir/tests/carry.v:7_2_Y" -> "w__cout" [style=dashed, color=gray];
+}

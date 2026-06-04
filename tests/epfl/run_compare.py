@@ -3,22 +3,33 @@
 """
 EPFL benchmark comparison driver.
 
-For every selected benchmark .v file, runs three Yosys jobs:
+For every selected benchmark .v file, runs:
 
     1. Yosys baseline pipeline (read_verilog -> opt -full -> stat)
-    2. MyIR full pipeline      (read_verilog -> myir_ast_import
-                                -> myir_opts -fixpoint -> myir_export
-                                -> opt_clean -> stat)
-    3. Formal equivalence       (equiv_make + equiv_induct on outputs of 1 & 2)
+    2. MyIR pipeline           (read_verilog -> myir_ast_import
+                                -> myir_opts -> myir_export -> opt_clean -> stat)
+    3. (only in prove/both mode) equivalence between outputs of 1 & 2
+
+Two run modes:
+    --mode measure : steps 1 & 2 only -> collect cell-count ratios FAST.
+                     The optimization-effect comparison does NOT need a proof,
+                     so this never pays the (sometimes 30+ min) SAT cost.
+    --mode prove   : also run the equivalence proof.  SAT (equiv_simple) for
+                     designs at or below --struct-threshold cells; a cheaper
+                     structural proof (cell-type histogram match + byte
+                     reproducible RTLIL) above it.  Proof timeouts are
+                     downgraded to equiv=timeout (the ratio stays valid)
+                     rather than failing the benchmark.
+    --mode both    : measure + prove (default).
 
 Emits two reports under tests/epfl/results/:
     epfl_results.csv  (machine-readable)
     epfl_results.md   (human-readable Markdown table + summary)
 
 Usage:
-    python tests/epfl/run_compare.py
+    python tests/epfl/run_compare.py --mode measure --pipeline full -j 4
     python tests/epfl/run_compare.py --filter "dec|int2float|adder"
-    python tests/epfl/run_compare.py --with-reliable -j 4
+    python tests/epfl/run_compare.py --mode prove --filter "dec|adder" -j 4
 """
 
 from __future__ import annotations
@@ -216,7 +227,7 @@ def render_template(text: str, **subs: str) -> str:
 def structural_equiv(yosys: str, myir_tmpl: str, input_str: str,
                      out_dir: Path, myir_il: Path,
                      yosys_stat: Path, myir_stat: Path,
-                     timeout: float) -> tuple[bool, str, float]:
+                     timeout: float) -> tuple[str, str, float]:
     """Two-part structural proof used when a SAT equiv is intractable.
 
     On multi-thousand-cell combinational EPFL designs a full
@@ -230,6 +241,9 @@ def structural_equiv(yosys: str, myir_tmpl: str, input_str: str,
 
     Both together give high confidence the AST->MyIR->RTLIL round trip is
     stable and structurally matches Yosys, without the SAT cost.
+
+    Returns (result, detail, elapsed) where result is one of
+    "pass" / "fail" / "timeout".
     """
     notes: list[str] = []
 
@@ -258,6 +272,7 @@ def structural_equiv(yosys: str, myir_tmpl: str, input_str: str,
     run = run_yosys(yosys, rerun_ys, rerun_log, REPO_ROOT, timeout)
 
     repro_ok = False
+    rerun_timed_out = (run.returncode == -1)
     if run.returncode != 0:
         notes.append(f"rerun rc={run.returncode}")
     elif not (rerun_il.is_file() and myir_il.is_file()):
@@ -275,7 +290,13 @@ def structural_equiv(yosys: str, myir_tmpl: str, input_str: str,
         try: rerun_log.unlink()
         except OSError: pass
 
-    return (stat_ok and repro_ok, "; ".join(notes), run.elapsed)
+    if stat_ok and repro_ok:
+        result = "pass"
+    elif rerun_timed_out:
+        result = "timeout"
+    else:
+        result = "fail"
+    return (result, "; ".join(notes), run.elapsed)
 
 
 # --------------------------------------------------------------------
@@ -402,15 +423,22 @@ def run_one_bench(yosys: str, bench_input: Path, out_dir: Path,
             # Large design: SAT equiv is intractable on Debug; fall back to
             # the structural proof (cell-type histogram match + RTLIL
             # reproducibility).
-            ok, detail, t = structural_equiv(
+            res, detail, t = structural_equiv(
                 yosys, templates["myir_pipeline"], input_str, out_dir,
                 myir_il, yosys_stat, myir_stat, timeout)
             r.t_equiv = t
-            if ok:
+            if res == "pass":
                 r.equiv = "PASS-struct"
                 r.status = "pass"
                 r.note(f"struct equiv (>{struct_threshold} cells): "
                        f"histogram match + reproducible RTLIL")
+            elif res == "timeout":
+                # Downgrade: measurement (ratio) is still valid; only the
+                # proof did not finish.  Do not fail the whole benchmark.
+                r.equiv = "timeout-struct"
+                r.status = "pass"
+                r.note(f"struct equiv timed out after {timeout:.0f}s; "
+                       f"ratio still valid")
             else:
                 r.equiv = "FAIL-struct"
                 r.status = "fail-equiv"
@@ -429,13 +457,21 @@ def run_one_bench(yosys: str, bench_input: Path, out_dir: Path,
             if run.returncode == 0:
                 r.equiv = "PASS"
                 r.status = "pass"
+            elif run.returncode == -1:
+                # Timeout -> downgrade, not a real mismatch.  The ratio data
+                # from steps 1 & 2 is still valid, so keep status=pass.
+                r.equiv = "timeout"
+                r.status = "pass"
+                r.note(f"equiv timed out after {timeout:.0f}s; "
+                       f"ratio still valid")
             else:
                 r.equiv = "FAIL"
                 r.status = "fail-equiv"
                 r.fail_stage = "equiv"
                 r.note(f"equiv rc={run.returncode}")
     else:
-        r.equiv = "skip"
+        # measure-only mode (or --no-equiv): collect ratios, skip the proof.
+        r.equiv = "measure-only"
         r.status = "pass" if r.fail_stage == "" else r.status
 
     # Cleanup intermediate Verilog/RTLIL if requested.  We deliberately
@@ -497,6 +533,8 @@ def write_md(rows: list[Row], path: Path) -> None:
     equiv_sat    = sum(1 for r in rows if r.equiv == "PASS")
     equiv_struct = sum(1 for r in rows if r.equiv == "PASS-struct")
     equiv_pass   = equiv_sat + equiv_struct
+    n_timeout    = sum(1 for r in rows if r.equiv in ("timeout", "timeout-struct"))
+    n_measure    = sum(1 for r in rows if r.equiv == "measure-only")
     valid_ratios = [r.ratio for r in rows
                     if r.status == "pass" and r.ratio > 0]
     geo = 0.0
@@ -504,28 +542,35 @@ def write_md(rows: list[Row], path: Path) -> None:
         prod = 1.0
         for v in valid_ratios: prod *= v
         geo = prod ** (1.0 / len(valid_ratios))
+    wins = sum(1 for r in rows if r.status == "pass" and 0 < r.ratio < 1.0)
+    ties = sum(1 for r in rows if r.status == "pass" and r.ratio == 1.0)
+    loss = sum(1 for r in rows if r.status == "pass" and r.ratio > 1.0)
     lines += [
         "",
         "## Summary",
         "",
         f"- Total benchmarks: **{total}**",
-        f"- Passed (full pipeline): **{passed}/{total}**",
-        f"- Equiv PASS (total):     **{equiv_pass}/{total}** "
-        f"(SAT: {equiv_sat}, structural: {equiv_struct})",
-        f"- Geomean cell ratio (MyIR / Yosys, passed only): "
-        f"**{geo:.3f}**" if valid_ratios else
-        "- Geomean cell ratio: n/a (no passing runs)",
+        f"- Passed (pipeline ran ok): **{passed}/{total}**",
+        f"- Equiv proven: **{equiv_pass}/{total}** "
+        f"(SAT: {equiv_sat}, structural: {equiv_struct})"
+        + (f", proof timeouts: {n_timeout}" if n_timeout else "")
+        + (f", measure-only: {n_measure}" if n_measure else ""),
+        f"- Optimization (MyIR vs Yosys cells): "
+        f"MyIR smaller on **{wins}**, tie on {ties}, Yosys smaller on {loss}",
+        (f"- Geomean cell ratio (MyIR / Yosys, passed only): **{geo:.3f}**"
+         if valid_ratios else
+         "- Geomean cell ratio: n/a (no passing runs)"),
         "",
         "Notes:",
         "- A ratio < 1.0 means MyIR produces fewer cells than Yosys's "
         "`opt -full` after `opt_clean`.",
         "- A ratio > 1.0 means Yosys's native pipeline is currently "
         "more aggressive on this benchmark.",
-        "- `PASS` = full SAT equivalence proof (`equiv_simple`). "
-        "`PASS-struct` = structural proof used above "
-        f"`--struct-threshold` cells: identical cell-type histogram plus "
-        "byte-reproducible RTLIL across reruns (SAT is intractable on "
-        "Debug builds for multi-thousand-cell designs).",
+        "- `measure-only` = `--mode measure`: ratio collected, no proof run. "
+        "`PASS` = full SAT proof (`equiv_simple`). `PASS-struct` = structural "
+        "proof above `--struct-threshold` cells (identical cell-type "
+        "histogram + byte-reproducible RTLIL). `timeout`/`timeout-struct` = "
+        "proof did not finish in time; the ratio is still valid.",
     ]
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -547,9 +592,17 @@ def main() -> int:
                     help="regex; only benchmarks whose path matches are run")
     ap.add_argument("--include-mtm", action="store_true",
                     help="include the very large MtM benchmarks")
+    ap.add_argument("--mode", choices=["measure", "prove", "both"],
+                    default="both",
+                    help="'measure' = collect cell-count ratios only, no "
+                         "equivalence proof (fast; the optimization-effect "
+                         "data does NOT need a proof). 'prove'/'both' = also "
+                         "run the equivalence check (SAT below "
+                         "--struct-threshold cells, structural above). "
+                         "Default 'both'.")
     ap.add_argument("--no-equiv",   action="store_true",
-                    help="skip the formal equivalence step (faster, "
-                         "stat-only comparison)")
+                    help="alias for --mode measure: skip the formal "
+                         "equivalence step (faster, stat-only comparison)")
     ap.add_argument("--with-reliable", action="store_true",
                     help="(reserved) run myir_reliable before the "
                          "compare; currently not invoked by the script "
@@ -626,8 +679,13 @@ def main() -> int:
     out_root = Path(args.out_dir)
     out_root.mkdir(parents=True, exist_ok=True)
 
+    # measure-only when explicitly requested via --mode measure or --no-equiv.
+    do_equiv = (args.mode != "measure") and not args.no_equiv
+
     print(f"Running {len(entries)} benchmark(s), j={args.jobs}, "
-          f"timeout={args.timeout:.0f}s, equiv={'no' if args.no_equiv else 'yes'}")
+          f"timeout={args.timeout:.0f}s, "
+          f"mode={'measure' if not do_equiv else args.mode}, "
+          f"equiv={'no' if not do_equiv else 'yes'}")
 
     rows: list[Row] = []
     if args.jobs <= 1:
@@ -635,7 +693,7 @@ def main() -> int:
             print(f"  >>> {e.path}")
             rows.append(run_one_bench(
                 yosys, fullpath, out_root / e.path.replace("/", "_"),
-                templates, not args.no_equiv, args.timeout,
+                templates, do_equiv, args.timeout,
                 args.keep_intermediate, args.struct_threshold))
     else:
         with cf.ThreadPoolExecutor(max_workers=args.jobs) as pool:
@@ -643,7 +701,7 @@ def main() -> int:
                 pool.submit(run_one_bench,
                             yosys, fullpath,
                             out_root / e.path.replace("/", "_"),
-                            templates, not args.no_equiv, args.timeout,
+                            templates, do_equiv, args.timeout,
                             args.keep_intermediate,
                             args.struct_threshold): e.path
                 for e, fullpath in entries

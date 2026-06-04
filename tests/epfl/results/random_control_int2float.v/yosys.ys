@@ -1,0 +1,18 @@
+# Yosys baseline pipeline template
+# Variables substituted at runtime (Python str.replace based):
+#   D:/MyVSYosys-pub/tests/epfl/lsils_benchmarks/random_control/int2float.v    -- benchmark .v path (forward slashes)
+#   D:/MyVSYosys-pub/tests/epfl/results/random_control_int2float.v/yosys.rtlil-- output RTLIL file (gold-side, for equiv)
+#   D:/MyVSYosys-pub/tests/epfl/results/random_control_int2float.v/yosys.v    -- optimized Verilog file (for inspection)
+#   D:/MyVSYosys-pub/tests/epfl/results/random_control_int2float.v/yosys.stat.txt -- file to capture 'stat' output verbatim
+#
+# Goal: synthesize using only Yosys native opt pipeline so we have a
+# fair "what Yosys can do on its own" baseline to compare MyIR against.
+
+read_verilog D:/MyVSYosys-pub/tests/epfl/lsils_benchmarks/random_control/int2float.v
+hierarchy -auto-top
+proc
+opt -full
+clean
+tee -o D:/MyVSYosys-pub/tests/epfl/results/random_control_int2float.v/yosys.stat.txt stat
+write_rtlil D:/MyVSYosys-pub/tests/epfl/results/random_control_int2float.v/yosys.rtlil
+write_verilog D:/MyVSYosys-pub/tests/epfl/results/random_control_int2float.v/yosys.v

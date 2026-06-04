@@ -1,0 +1,17 @@
+
+5. Printing statistics.
+
+=== top ===
+
+   Number of wires:               5895
+   Number of wire bits:           5895
+   Number of public wires:        3377
+   Number of public wire bits:    3377
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:               5383
+     $and                         2737
+     $not                         2518
+     $or                           128
+

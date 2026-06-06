@@ -344,31 +344,42 @@ end
 
 > 建议组合使用顺序：`myir_opt_const → myir_opt_expr`，让常量先通过传播尽量靠近表达式后再折叠。`myir_opts` 已经按这个次序自动安排。
 
-#### myir_rewrite — k-cut 局部代数重写
+#### myir_rewrite — k-cut 局部代数重写（批量轮次算法）
 
 最重型的优化命令，针对的是 `myir_opt_expr` 单点规则无法覆盖的、跨 2–3 个 cell 的局部模式。
 
-- **k-cut 枚举**：递归对每个 expression 节点列出叶子数 ≤ k（默认 4）的所有局部子图（`enumerate_cuts_rec`），并 memoize
-- **`-max-cuts <N>` 限额**（默认 16）：对每个节点保留的 cut 数封顶，按"叶子少优先 / 内部节点少优先"截断，避免组合爆炸；命中截断时在 summary 打印 `cuts truncated by -max-cuts`
-- **8 大类重写规则**：
-  | 类别 | 模式（节选） |
-  |---|---|
-  | distributive_factor | `(a & b) \| (a & c)` → `a & (b \| c)` 等 |
-  | absorption | `x \| (x & y)` → `x` 等 |
-  | idempotent | `x & x` → `x`、`x \| x` → `x` |
-  | xor_self / xnor_self | `x ^ x` → `0`、`x ~^ x` → `1` |
-  | double_not | `~~x` → `x` |
-  | demorgan | `~a \| ~b` → `~(a & b)` 等 |
-  | consensus / resub | `(x & y) \| (~x & y)` → `y` 等 |
-  | const | `x & 0` / `x \| 1` / `x ^ 0` 等 |
-- **benefit_score 评分**：在多条规则都匹配的同一 cut 上取得分最高者，避免劣化重写
-- **批量应用（关键性能修正）**：早期实现是"每应用一个重写就把整个模块的 k-cut 全量重枚举一遍"，应用 R 次即 R 轮全模块枚举，复杂度随 cell 数平方级恶化——2000+ cell 的 adder 在 Release 下都 >400s 跑不完。现改为**每轮枚举后按收益排序，贪心选取一批「触及节点索引两两不相交」的重写，一次重建 `exprs` 全部应用**，把全量重枚举次数从 O(重写数) 降到 O(轮数)。
-  - 正确性依据：重写规则只删除 **use-count==1** 的中间节点（其唯一使用者就在自身 pattern 内），叶子线与根结果线名恒被保留，故索引不相交 ⇒ 互不干扰；`touched_indices()` + 不相交筛选保证安全
-  - 配套把 cut 去重的 O(n²) 线性查重换成哈希集
-  - 实测效果：adder 的 `myir_opts -fixpoint` 从 >400s（超时）降到 **~7s**；EPFL 10 条全集（含 5000+ cell 的 bar/max）measure 模式 `-j 4` 总耗时 ~31s
-- **CLI 参数**：`-k <N>` / `-max-cuts <N>` / `-stats`
-- **汇总日志**：iterations（现含义为"批量轮数"）/ total cuts enumerated / peak per node / rewrites applied；加 `-stats` 后还会按 rule_name 分组输出命中明细
-- **澄清**：本 pass 与 Yosys 自带的 ABC 工艺映射（`abc` / `techmap`）不是一回事——`myir_rewrite` 仍在 MyIR 这一中间表示上工作，**不接触工艺库**
+**核心算法：按「枚举一轮 → 批量应用一批」迭代到收敛**，而非"每改一处就全量重枚举"。每一轮做以下事情：
+
+1. **k-cut 枚举（每轮一次，全模块）**：递归对每个 expression 节点列出叶子数 ≤ k（默认 4）的所有局部子图（`enumerate_all_cuts` / `enumerate_cuts_rec`）并 memoize；cut 去重用**哈希集**（`unordered_set`）做 O(1) 查重，而非 O(n²) 线性比对
+   - **`-max-cuts <N>` 限额**（默认 16）：对每个节点保留的 cut 数封顶，按"叶子少优先 / 内部节点少优先"截断，避免组合爆炸；命中截断时在 summary 打印 `cuts truncated by -max-cuts`
+2. **收集所有候选**：`find_all_rewrite_candidates` 对每个根节点找出收益最高的一条重写候选（`benefit_score` 评分，多规则命中同一 cut 时取最高分，避免劣化重写）
+3. **按收益排序 + 贪心选不相交批**：候选按 score 降序排，依次纳入；用 `touched_indices()` 算出每条候选会改动的 expression 索引集合，**只接纳与已选集合两两不相交的候选**，冲突的留到下一轮
+4. **一次性批量重建**：把这一批重写汇成一个 `RewritePlan`（remove / replace / connects），由 `apply_plan` **一趟重建 `exprs` 与连接**全部落地
+5. 本轮无可应用候选则停止；否则回到第 1 步
+
+**8 大类重写规则**：
+
+| 类别 | 模式（节选） |
+|---|---|
+| distributive_factor | `(a & b) \| (a & c)` → `a & (b \| c)` 等 |
+| absorption | `x \| (x & y)` → `x` 等 |
+| idempotent | `x & x` → `x`、`x \| x` → `x` |
+| xor_self / xnor_self | `x ^ x` → `0`、`x ~^ x` → `1` |
+| double_not | `~~x` → `x` |
+| demorgan | `~a \| ~b` → `~(a & b)` 等 |
+| consensus / resub | `(x & y) \| (~x & y)` → `y` 等 |
+| const | `x & 0` / `x \| 1` / `x ^ 0` 等 |
+
+**为什么这么改（关键性能修正）**：早期实现是"每应用一个重写就把整个模块的 k-cut 全量重枚举一遍"，应用 R 次即 R 轮全模块枚举，复杂度随 cell 数平方级恶化——2000+ cell 的 adder 在 Release 下都 >400s 跑不完。批量化后**全量重枚举次数从 O(重写数) 降到 O(轮数)**。
+
+- **批量正确性依据**：重写规则只删除 **use-count==1** 的中间节点（其唯一使用者就在自身 pattern 内），叶子线与根结果线名恒被保留；因此「触及索引两两不相交」的一批重写互不干扰，可安全地在同一轮一次落地
+- **实测效果**：adder 的 `myir_opts -fixpoint` 从 >400s（超时）降到 **~7s**；EPFL 10 条全集（含 5000+ cell 的 bar/max）measure 模式 `-j 4` 总耗时 ~31s
+
+**CLI 参数**：`-k <N>` / `-max-cuts <N>` / `-stats`
+
+**汇总日志**：iterations（**批量轮数**，非重写次数）/ total cuts enumerated / peak per node / rewrites applied；加 `-stats` 后还会按 rule_name 分组输出命中明细
+
+**澄清**：本 pass 与 Yosys 自带的 ABC 工艺映射（`abc` / `techmap`）不是一回事——`myir_rewrite` 仍在 MyIR 这一中间表示上工作，**不接触工艺库**
 
 #### myir_opt_strength — 算术强度削减
 

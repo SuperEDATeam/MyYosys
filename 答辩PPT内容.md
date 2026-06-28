@@ -72,7 +72,7 @@
 ## 对比实验（重点）
 
 - 实验数据集介绍（EPFL）
-- 我们测试的benchmark介绍（ctrl，dec，adder，int2float，etc.）
+- 我们测试的benchmark介绍（ctrl，dec，adder，int2float，etc.），<u>**强调数据规模（千级cells）**</u>
 - 实验流程&baseline介绍，我们自己的流程，和Yosys baseline流程，如果放到PPT里面看起来太小了，建议把这个流程图横过来画，或者<u>在PPT里面用**更加精简一点的图形**表示这个过程</u>
   - 图片说的是综设总结报告3.3.1 Yosys 基线流程（gold）那张图
 

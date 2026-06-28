@@ -74,7 +74,7 @@
 - 实验数据集介绍（EPFL）
 - 我们测试的benchmark介绍（ctrl，dec，adder，int2float，etc.）
 - 实验流程&baseline介绍，我们自己的流程，和Yosys baseline流程，如果放到PPT里面看起来太小了，建议把这个流程图横过来画，或者<u>在PPT里面用**更加精简一点的图形**表示这个过程</u>
-- <img src="C:\Users\inclu\AppData\Roaming\Typora\typora-user-images\image-20260628151323873.png" alt="image-20260628151323873" style="zoom: 50%;" />
+  - 图片说的是综设总结报告3.3.1 Yosys 基线流程（gold）那张图
 
 - 我们的实验是通过run_compare.py这个脚本去跑的，故需介绍这个脚本的逻辑
 - **<u>实验结果分析</u>**

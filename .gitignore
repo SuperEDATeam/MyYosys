@@ -16,6 +16,12 @@
 /MyVSYosys/x64/
 /MyVSYosys/Win32/
 
+# ---- Vibe-Loop process re-enactment (report material only) ----
+# Throwaway sandbox: a self-contained C++ re-enactment of the myir_rewrite
+# development used to document the Vibe-Loop process model.  Not part of the
+# build (not in MyVSYosys.vcxproj) and not pushed to the remote.
+/_vibeloop_demo/
+
 # ---- Root-level documents and presentation assets are not tracked. ----
 # (SUMMARY/*.md is intentionally tracked -- only root-level *.md is ignored.)
 /*.md

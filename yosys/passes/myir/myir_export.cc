@@ -163,6 +163,20 @@ struct MyIRExportPass : public Pass {
                     continue;
                 }
 
+                // Concat has no native single $-cell in RTLIL: it is just a
+                // bit-vector grouping.  Emit it as a direct connection so that
+                // downstream passes (and equiv/SAT) see plain wiring instead
+                // of an opaque cell.  MyIR Concat operands are least-significant
+                // first (operands[0] occupies the low bits), which matches
+                // SigSpec::append building from LSB upward.
+                if (expr.op == MyIR::OpType::Concat) {
+                    RTLIL::SigSpec cat;
+                    for (auto &op : expr.operands)
+                        cat.append(name_to_sigspec(op, mod));
+                    mod->connect(name_to_sigspec(expr.result_wire, mod), cat);
+                    continue;
+                }
+
                 std::string cname = "$myir_c" + std::to_string(cell_cnt++);
                 RTLIL::Cell *cell = mod->addCell(RTLIL::IdString(cname),
                                                   RTLIL::IdString(celltype));

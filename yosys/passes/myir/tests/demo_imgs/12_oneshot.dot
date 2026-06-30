@@ -1,0 +1,54 @@
+digraph "_demo_all_opts" {
+  rankdir=LR;
+  label="demo_all_opts";
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontsize=8];
+
+  "w__rewrite_0" [label="rewrite$0\n1 bit", shape=ellipse];
+  "w__a" [label="a\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__b" [label="b\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__c" [label="c\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__d" [label="d\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__din" [label="din\n4 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__en" [label="en\n1 bit", shape=ellipse];
+  "w__eq" [label="eq\n1 bit", shape=ellipse];
+  "w__fac" [label="fac\n1 bit", shape=ellipse];
+  "w__k0" [label="k0\n1 bit", shape=ellipse];
+  "w__k1" [label="k1\n1 bit", shape=ellipse];
+  "w__msel" [label="msel\n1 bit", shape=ellipse];
+  "w__y_cat" [label="y_cat\n8 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+  "w__y_main" [label="y_main\n1 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+  "w__y_sh1" [label="y_sh1\n1 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+  "w__y_sh2" [label="y_sh2\n1 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+  "w__y_shift" [label="y_shift\n4 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+  "c_32'00000000000000000000000000000001" [label="32'00000000000000000000000000000001", shape=diamond, style=filled, fillcolor=lightgray];
+  "c_4'0011" [label="4'0011", shape=diamond, style=filled, fillcolor=lightgray];
+
+  "e_0" [label="Or", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__b" -> "e_0";
+  "w__c" -> "e_0";
+  "e_0" -> "w__rewrite_0";
+  "e_1" [label="And", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__a" -> "e_1";
+  "w__rewrite_0" -> "e_1";
+  "e_1" -> "w__fac";
+  "e_2" [label="And", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__b" -> "e_2";
+  "w__c" -> "e_2";
+  "e_2" -> "w__y_sh1";
+  "e_3" [label="Shl", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__din" -> "e_3";
+  "c_32'00000000000000000000000000000001" -> "e_3";
+  "e_3" -> "w__y_shift";
+  "e_4" [label="Concat", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "c_4'0011" -> "e_4";
+  "w__din" -> "e_4";
+  "e_4" -> "w__y_cat";
+  "c_1'1" -> "w__k0" [style=dashed, color=gray];
+  "c_1'1" -> "w__k1" [style=dashed, color=gray];
+  "c_1'1" -> "w__en" [style=dashed, color=gray];
+  "w__msel" -> "w__y_main" [style=dashed, color=gray];
+  "c_1'1" -> "w__eq" [style=dashed, color=gray];
+  "w__fac" -> "w__msel" [style=dashed, color=gray];
+  "w__y_sh1" -> "w__y_sh2" [style=dashed, color=gray];
+}

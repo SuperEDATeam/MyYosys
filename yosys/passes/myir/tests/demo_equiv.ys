@@ -1,0 +1,35 @@
+# Prove the MyIR-optimized demo is equivalent to the plain Yosys reference.
+# gold = read_verilog + proc (unoptimized reference)
+# gate = read_verilog + myir_ast_import + myir_opts + myir_export
+#
+# Safe to run inside an existing yosys session via:
+#   script D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_equiv.ys
+# (the design -reset below clears whatever was loaded first.)
+
+design -reset
+
+read_verilog D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_all_opts.v
+hierarchy -auto-top
+proc
+opt_clean
+rename demo_all_opts gold
+design -stash gold
+
+read_verilog D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_all_opts.v
+hierarchy -auto-top
+myir_ast_import
+myir_opts
+myir_export
+proc
+opt_clean
+rename demo_all_opts gate
+design -stash gate
+
+design -copy-from gold -as gold gold
+design -copy-from gate -as gate gate
+
+# Definitive combinational proof: build an equivalence miter and let the SAT
+# engine check every output over the full input space at once.
+miter -equiv -flatten -make_assert gold gate miter
+hierarchy -top miter
+sat -verify -prove-asserts -show-ports miter

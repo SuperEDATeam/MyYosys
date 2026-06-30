@@ -1,0 +1,38 @@
+digraph "_mux4" {
+  rankdir=LR;
+  label="mux4";
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontsize=8];
+
+  "w__a" [label="a\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__b" [label="b\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__c" [label="c\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__d" [label="d\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__sel" [label="sel\n2 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__y" [label="y\n1 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+
+
+  subgraph cluster_proc_0 {
+    label="always @(*)";
+    style=dashed;
+    "p0_s0" [label="block", shape=plaintext];
+    "p0_s0_s1" [label="case (_sel)", shape=trapezium, style=filled, fillcolor="#e0e0ff"];
+    "p0_s0_s1_br0" [label="2'00", shape=plaintext];
+    "p0_s0_s1" -> "p0_s0_s1_br0";
+    "p0_s0_s1_br0_s0" [label="_y = _a", shape=box, style=filled, fillcolor="#e0f0e0"];
+    "p0_s0_s1_br0" -> "p0_s0_s1_br0_s0";
+    "p0_s0_s1_br1" [label="2'01", shape=plaintext];
+    "p0_s0_s1" -> "p0_s0_s1_br1";
+    "p0_s0_s1_br1_s0" [label="_y = _b", shape=box, style=filled, fillcolor="#e0f0e0"];
+    "p0_s0_s1_br1" -> "p0_s0_s1_br1_s0";
+    "p0_s0_s1_br2" [label="2'10", shape=plaintext];
+    "p0_s0_s1" -> "p0_s0_s1_br2";
+    "p0_s0_s1_br2_s0" [label="_y = _c", shape=box, style=filled, fillcolor="#e0f0e0"];
+    "p0_s0_s1_br2" -> "p0_s0_s1_br2_s0";
+    "p0_s0_s1_br3" [label="2'11", shape=plaintext];
+    "p0_s0_s1" -> "p0_s0_s1_br3";
+    "p0_s0_s1_br3_s0" [label="_y = _d", shape=box, style=filled, fillcolor="#e0f0e0"];
+    "p0_s0_s1_br3" -> "p0_s0_s1_br3_s0";
+    "p0_s0" -> "p0_s0_s1";
+  }
+}

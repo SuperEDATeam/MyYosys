@@ -2,8 +2,19 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <map>
 
 USING_YOSYS_NAMESPACE
+
+// Global saved-design table owned by passes/cmds/design.cc.  We peek at it
+// so we can delete a saved design only when it actually exists: in this
+// build `design -delete <missing>` raises a fatal log_cmd_error that a
+// C++ catch(...) does NOT intercept, so a blind delete would abort the
+// whole pass on its very first (clean-state) invocation.
+YOSYS_NAMESPACE_BEGIN
+extern std::map<std::string, RTLIL::Design*> saved_designs;
+YOSYS_NAMESPACE_END
+
 PRIVATE_NAMESPACE_BEGIN
 
 // ====================================================================
@@ -63,6 +74,10 @@ struct ModuleResult {
 
 static void try_delete_saved_design(RTLIL::Design* design, const std::string& name)
 {
+    // Only delete when the saved design exists; `design -delete` on a
+    // missing name is a fatal error here (see note on saved_designs above).
+    if (saved_designs.count(name) == 0)
+        return;
     try {
         Pass::call(design, "design -delete " + name);
     }

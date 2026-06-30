@@ -80,6 +80,13 @@ struct MyIROptSharePass : public Pass {
                         it->second.c_str(),
                         it->second.c_str());
                     replace_operand(m, e.result_wire, it->second);
+                    // The eliminated expression may have driven a wire that is
+                    // still required as a sink (e.g. a module output port that
+                    // is never read as an operand).  Keep it alive with an
+                    // explicit alias so it does not become undriven.
+                    if (e.result_wire != it->second)
+                        m.connects.push_back(
+                            MyIR::Assign{e.result_wire, it->second});
                     ++total;
                 }
             }

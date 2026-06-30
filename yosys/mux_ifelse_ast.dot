@@ -1,0 +1,32 @@
+digraph "_mux2" {
+  rankdir=LR;
+  label="mux2";
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontsize=8];
+
+  "w__ast_t0" [label="ast_t0\n1 bit", shape=ellipse];
+  "w__a" [label="a\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__b" [label="b\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__sel" [label="sel\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__y" [label="y\n1 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+
+  "e_0" [label="ReduceBool", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__sel" -> "e_0";
+  "e_0" -> "w__ast_t0";
+
+  subgraph cluster_proc_0 {
+    label="always @(*)";
+    style=dashed;
+    "p0_s0" [label="block", shape=plaintext];
+    "p0_s0_s1" [label="if (_ast_t0)", shape=diamond, style=filled, fillcolor="#ffe0e0"];
+    "p0_s0_s1_T" [label="then", shape=plaintext];
+    "p0_s0_s1" -> "p0_s0_s1_T";
+    "p0_s0_s1_T_s0" [label="_y = _b", shape=box, style=filled, fillcolor="#e0f0e0"];
+    "p0_s0_s1_T" -> "p0_s0_s1_T_s0";
+    "p0_s0_s1_F" [label="else", shape=plaintext];
+    "p0_s0_s1" -> "p0_s0_s1_F";
+    "p0_s0_s1_F_s0" [label="_y = _a", shape=box, style=filled, fillcolor="#e0f0e0"];
+    "p0_s0_s1_F" -> "p0_s0_s1_F_s0";
+    "p0_s0" -> "p0_s0_s1";
+  }
+}

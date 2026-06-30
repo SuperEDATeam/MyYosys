@@ -1,0 +1,28 @@
+read_verilog passes/myir/tests/demo_all_opts.v
+hierarchy -auto-top
+myir_ast_import
+
+log ">>> STEP const-1"
+myir_opt_const
+log ">>> STEP expr-1"
+myir_opt_expr
+log ">>> STEP compare"
+myir_opt_compare
+log ">>> STEP strength"
+myir_opt_strength
+log ">>> STEP concat"
+myir_opt_concat
+log ">>> STEP const-2"
+myir_opt_const
+log ">>> STEP muxtree"
+myir_opt_muxtree
+log ">>> STEP expr-2"
+myir_opt_expr
+log ">>> STEP rewrite"
+myir_rewrite -k 4 -stats
+log ">>> STEP share"
+myir_opt_share
+log ">>> STEP clean"
+myir_opt_clean
+log ">>> STEP done"
+myir_dump

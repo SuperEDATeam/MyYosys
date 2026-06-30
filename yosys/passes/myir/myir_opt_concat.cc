@@ -49,8 +49,9 @@ static bool all_const(const std::vector<std::string> &ops)
 }
 
 // Fold a constant Concat into one big constant.  Concat semantics:
-// operands[0] is the most significant chunk (matches Verilog `{a, b, c}`
-// where `a` occupies the top bits).
+// operands[0] is the LEAST significant chunk (the MyIR/AST import stores
+// `{a, b, c}` least-significant-first, so operands[0] occupies the low
+// bits).  Each successive chunk is therefore shifted further left.
 static bool fold_all_constants(const MyIR::Expr &e, std::string &out)
 {
     uint64_t value = 0;
@@ -60,7 +61,7 @@ static bool fold_all_constants(const MyIR::Expr &e, std::string &out)
         uint64_t v = MyIR::const_to_uint(op);
         if (total_width + w > 64)
             return false;        // outside our uint_to_const range
-        value = (value << w) | (v & (w >= 64 ? ~0ULL : ((1ULL << w) - 1)));
+        value |= (v & (w >= 64 ? ~0ULL : ((1ULL << w) - 1))) << total_width;
         total_width += w;
     }
     if (total_width == 0)
@@ -136,7 +137,9 @@ static bool merge_adjacent_consts(const std::vector<std::string> &in,
             continue;
         }
 
-        // Merge [i, j) into one constant, MSB-first (operands[0] is MS).
+        // Merge [i, j) into one constant.  Concat operands are
+        // least-significant first, so in[i] occupies the low bits and each
+        // later chunk is shifted further left.
         uint64_t value = 0;
         int total_width = 0;
         bool overflow = false;
@@ -144,8 +147,8 @@ static bool merge_adjacent_consts(const std::vector<std::string> &in,
             int w = MyIR::const_width(in[t]);
             uint64_t v = MyIR::const_to_uint(in[t]);
             if (total_width + w > 64) { overflow = true; break; }
-            value = (value << w)
-                  | (v & (w >= 64 ? ~0ULL : ((1ULL << w) - 1)));
+            value |= (v & (w >= 64 ? ~0ULL : ((1ULL << w) - 1)))
+                  << total_width;
             total_width += w;
         }
         if (overflow) {
@@ -192,9 +195,9 @@ struct MyIROptConcatPass : public Pass {
         log("  flatten     Concat(.., Concat(..) [single-use], ..)\n");
         log("              ->  Concat(.., inner operands, ..)\n");
         log("\n");
-        log("Concat operand order matches Verilog `{a, b, c}`: operands[0] is\n");
-        log("the most significant chunk.  Folding therefore shifts each piece\n");
-        log("left by the combined width of the pieces below it.\n");
+        log("Concat operands are stored least-significant first: operands[0]\n");
+        log("occupies the low bits.  Folding therefore shifts each successive\n");
+        log("piece further left by the combined width of the pieces below it.\n");
         log("\n");
         log("All four rules are unconditionally profitable (cell count drops or\n");
         log("stays the same while later passes get a cleaner Concat to look at).\n");

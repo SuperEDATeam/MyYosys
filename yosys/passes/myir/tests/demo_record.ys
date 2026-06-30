@@ -1,0 +1,174 @@
+# =====================================================================
+#  demo_record.ys  --  答辩录制脚本（带注释 / 旁白）
+# ---------------------------------------------------------------------
+#  用法：启动 MyVSYosys（任意工作目录均可，下面全是绝对路径），
+#        然后【逐行手动敲入】下面的命令。
+#        myir_show 的 -o 给的是 .dot 文件名，同名 .png 会自动渲染生成；
+#        -view 会自动弹出该 PNG，便于讲解。
+#        输出到 D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/，文件名带序号便于回看。
+#
+#  全程约 5 分钟：
+#    序幕    转换 + 等价性验证（myir_export / myir_reliable）（~45s）
+#    第一幕  读入电路 + 建 MyIR                              （~20s）
+#    第二幕  逐条优化，渐进式看效果                          （~3min）
+#    第三幕  一键 myir_opts + myir_dump + 形式等价收尾        （~1min）
+#
+#  ★ 标记 = 强烈建议在视频里展示该图（视觉变化最明显的 4 个高光时刻）
+#  其余步骤若时间紧，可只口述 + 看命令打印的 summary，不必每张图都细讲。
+# =====================================================================
+
+
+# =====================================================================
+#  序幕：可靠性 / 等价性验证（先证明我们的转换可信，再谈优化）
+# =====================================================================
+# 旁白：在做任何优化之前，先回答一个根本问题——
+#       “把 Verilog 翻成自定义 IR、再翻回去，电路还是原来那个吗？”
+
+read_verilog D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_all_opts.v
+hierarchy -auto-top
+
+# ── myir_export：演示 Verilog → MyIR → 标准 RTLIL 的“还原”能力 ──
+# 旁白：myir_ast_import 进 MyIR，myir_export 再还原回标准 RTLIL。
+#       stat 显示还原出的网表全是标准 cell（$and/$or/$mux/$add ...）。
+myir_ast_import
+myir_export
+stat
+
+# ── myir_reliable：形式化逐模块证明“往返”与原电路等价 ──────────
+# 旁白：myir_reliable 内部构造 gold（原始综合）与 gate（经我们 MyIR 往返），
+#       用 equiv_make / equiv_simple / equiv_induct / equiv_status 判等。
+#       结果：reliable = 1，“MyIR is reliable for all selected modules.”
+design -reset
+read_verilog D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_all_opts.v
+hierarchy -auto-top
+myir_reliable
+
+# 旁白：再把“带完整优化流水线”的往返也证明一遍——优化也不改变电路功能。
+myir_reliable -with-opts
+
+
+# =====================================================================
+#  第一幕：读入电路，构建 MyIR
+# =====================================================================
+# 旁白：可靠性确认完毕，正式开始优化演示。这是一个故意设计的小电路，把我们
+#       9 条优化命令各自的触发场景都串进了同一个模块——主链路是布尔级联，
+#       旁边挂了算术、拼接两条支路。
+design -reset
+read_verilog D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_all_opts.v
+hierarchy -auto-top
+
+# 旁白：myir_ast_import 直接从 Verilog AST 构建我们自定义的中间表示 MyIR。
+myir_ast_import
+
+# ★ 展示「优化前」的完整数据流图，作为后面所有对比的基准。
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/00_initial.dot -view
+
+
+# =====================================================================
+#  第二幕：按 myir_opts 的真实流水线顺序，逐条优化
+#  顺序：const → expr → compare → strength → concat
+#        → const → muxtree → expr → rewrite → share → clean
+#  （const / expr 各出现两次，是为了把上一步的结果传播下去，后面会讲到）
+# =====================================================================
+
+# ── 步骤 1：myir_opt_const（常量传播）────────────────────────────
+# 旁白：k0=1 经 k1、en 一路别名传递，常量 1 被传播到使用处。
+# 预期：summary 里 total substitutions = 3；en 这条别名链塌缩成常量 1。
+myir_opt_const
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/01_const.dot -view
+
+# ── 步骤 2：myir_opt_expr（代数恒等式化简）★ ─────────────────────
+# 旁白：上一步把 en 变成了常量 1，于是 y_main = msel & 1 直接化简为 msel。
+# 预期：total simplifications = 1；那个 AND 门消失。
+myir_opt_expr
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/02_expr.dot -view
+
+# ── 步骤 3：myir_opt_compare（比较化简）────────────────────────
+# 旁白：din == din 恒为真，折叠成常量 1（它正是后面那个多路选择器的选择信号）。
+# 预期：total simplifications = 1；eq 变成常量 1。
+myir_opt_compare
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/03_compare.dot -view
+
+# ── 步骤 4：myir_opt_strength（强度削减）─────────────────────────
+# 旁白：算术支路 din + din 等价于左移一位，乘/加被替换成更便宜的移位。
+# 预期：add_self_to_shl = 1；Add 节点变成 Shl。
+myir_opt_strength
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/04_strength.dot -view
+
+# ── 步骤 5：myir_opt_concat（拼接化简）──────────────────────────
+# 旁白：拼接支路 {din, 2'b00, 2'b11} 里相邻的两个常量被合并成一个 4'b0011。
+# 预期：adj_const = 1；两个常量块合一。
+myir_opt_concat
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/05_concat.dot -view
+
+# ── 步骤 6：myir_opt_const（第二遍）─────────────────────────────
+# 旁白：这就是为什么流水线里 const 出现两次——上面 compare 把 eq 变成了常量，
+#       这一遍把这个常量真正传播进多路选择器的选择端，为下一步做铺垫。
+# 预期：total substitutions = 1（eq 的常量被代入 mux）。
+myir_opt_const
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/06_const2.dot -view
+
+# ── 步骤 7：myir_opt_muxtree（多路选择器化简）★ ──────────────────
+# 旁白：选择端现在是常数 1，多路选择器塌缩，直接取真分支 fac；
+#       假分支 dead 失去引用，变成死逻辑（留给最后清理）。
+# 预期：branches removed = 1 (const_sel=1)；Mux 消失。
+myir_opt_muxtree
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/07_muxtree.dot -view
+
+# ── 步骤 8：myir_opt_expr（第二遍，收尾恒等式）──────────────────
+# 旁白：再扫一遍恒等式，清掉 mux 塌缩后可能残留的简单别名。
+myir_opt_expr
+
+# ── 步骤 9：myir_rewrite（k-cut 代数重写）★ ─────────────────────
+# 旁白：识别可因式分解的结构 (a&b)|(a&c)，重写为 a&(b|c)，少一个门。
+# 预期：rewrites applied = 1；两个 AND + 一个 OR 变成一个 OR + 一个 AND。
+myir_rewrite -k 4 -stats
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/09_rewrite.dot -view
+
+# ── 步骤 10：myir_opt_share（公共子表达式共享）─────────────────
+# 旁白：y_sh1 与 y_sh2 都算 b&c，合并成一次计算，两个输出共享同一结果。
+# 预期：Eliminated 1 redundant expression(s)；两个相同 AND 合一。
+myir_opt_share
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/10_share.dot -view
+
+# ── 步骤 11：myir_opt_clean（死代码清理）★ ─────────────────────
+# 旁白：muxtree 之后 dead 分支彻底没人用了，连同别名残留一起被清掉，图明显变小。
+# 预期：Removed N dead expression(s)；dead 节点消失。
+myir_opt_clean
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/11_clean.dot -view
+
+# 旁白：到这里，11 步逐条优化全部走完，这张图就是逐步优化的最终结果。
+
+
+# =====================================================================
+#  第三幕：一键 myir_opts，验证与逐步结果一致
+# =====================================================================
+# 旁白：现实里没人会一条条敲，我们提供了 myir_opts 一键跑完整条流水线。
+#       重新从干净的 Verilog 出发，一条命令完成同样的优化。
+design -reset
+read_verilog D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_all_opts.v
+hierarchy -auto-top
+myir_ast_import
+
+# 旁白：一条命令 = 上面 11 步。
+myir_opts
+
+# ★ 一键结果图：与步骤 11 的 11_clean.png 对照，应当完全一致。
+myir_show -o D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_imgs/12_oneshot.dot -view
+
+# ── 收尾：myir_dump 打印优化后 MyIR 的文本表示 ──────────────────
+# 旁白：最后用 myir_dump 把优化后的 MyIR 以文本形式打印出来——
+#       端口、wire、各表达式、连接一目了然，这就是我们自定义 IR 的最终形态。
+myir_dump
+
+# 旁白（口述即可，无需再演示）：
+#   正确性不是靠肉眼看图，而是有形式化保证。
+#   demo_equiv.ys 用 miter + SAT 证明「优化后的电路 ≡ 未优化参考电路」，结果 SUCCESS。
+#   同时我们在 EPFL 开源基准上做了规模化的等价 + 优化对比（见 tests/epfl/）。
+#
+#   想现场跑一遍形式等价，【在当前 yosys 会话里】直接敲 yosys 的 script 命令：
+#     script D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_equiv.ys
+#
+#   （上面是 yosys 命令，要在 yosys> 提示符里敲；它开头会 design -reset 清场。
+#     若想用独立进程跑，请到「另一个 PowerShell 窗口」执行下面这条 shell 命令：
+#       D:/MyVSYosys-pub/x64/Release/MyVSYosys.exe -s D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_equiv.ys ）

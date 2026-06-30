@@ -1,0 +1,36 @@
+digraph "_dff_ar" {
+  rankdir=LR;
+  label="dff_ar";
+  node [fontname="Helvetica", fontsize=10];
+  edge [fontsize=8];
+
+  "w__ast_t0" [label="ast_t0\n1 bit", shape=ellipse];
+  "w__ast_t1" [label="ast_t1\n1 bit", shape=ellipse];
+  "w__clk" [label="clk\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__d" [label="d\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+  "w__q" [label="q\n1 bit", shape=octagon, style=filled, fillcolor=lightyellow];
+  "w__rst_n" [label="rst_n\n1 bit", shape=octagon, style=filled, fillcolor=lightblue];
+
+  "e_0" [label="LogicNot", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__rst_n" -> "e_0";
+  "e_0" -> "w__ast_t0";
+  "e_1" [label="ReduceBool", shape=box, style="rounded,filled", fillcolor="#f0e0d0"];
+  "w__ast_t0" -> "e_1";
+  "e_1" -> "w__ast_t1";
+
+  subgraph cluster_proc_0 {
+    label="always @(posedge clk or negedge rst_n)";
+    style=dashed;
+    "p0_s0" [label="block", shape=plaintext];
+    "p0_s0_s1" [label="if (_ast_t1)", shape=diamond, style=filled, fillcolor="#ffe0e0"];
+    "p0_s0_s1_T" [label="then", shape=plaintext];
+    "p0_s0_s1" -> "p0_s0_s1_T";
+    "p0_s0_s1_T_s0" [label="_q <= 1'0", shape=box, style=filled, fillcolor="#e0f0e0"];
+    "p0_s0_s1_T" -> "p0_s0_s1_T_s0";
+    "p0_s0_s1_F" [label="else", shape=plaintext];
+    "p0_s0_s1" -> "p0_s0_s1_F";
+    "p0_s0_s1_F_s0" [label="_q <= _d", shape=box, style=filled, fillcolor="#e0f0e0"];
+    "p0_s0_s1_F" -> "p0_s0_s1_F_s0";
+    "p0_s0" -> "p0_s0_s1";
+  }
+}

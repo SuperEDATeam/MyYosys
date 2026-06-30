@@ -188,16 +188,20 @@ static std::string flatten_expr(AstNode *node, MyIR::Module &m, int &tmp_cnt)
     {
         if (node->children.size() < 3) break;
         std::string s = flatten_expr(node->children[0], m, tmp_cnt);
-        std::string a = flatten_expr(node->children[1], m, tmp_cnt);
-        std::string b = flatten_expr(node->children[2], m, tmp_cnt);
+        std::string t_val = flatten_expr(node->children[1], m, tmp_cnt);
+        std::string f_val = flatten_expr(node->children[2], m, tmp_cnt);
         std::string tmp = "$ast_t" + std::to_string(tmp_cnt++);
 
         int w = 1;
-        auto wa = m.wires.find(a);
+        auto wa = m.wires.find(t_val);
         if (wa != m.wires.end()) w = wa->second.width;
 
+        // MyIR Mux follows the RTLIL $mux convention: operands[0] is the
+        // value selected when S == 0 (the false branch), operands[1] is the
+        // value selected when S == 1 (the true branch), operands[2] is S.
+        // Verilog `s ? t_val : f_val` therefore maps to {f_val, t_val, s}.
         m.wires[tmp] = MyIR::Port{tmp, MyIR::PortDir::Internal, w, false};
-        m.exprs.push_back(MyIR::Expr{MyIR::OpType::Mux, tmp, w, {a, b, s}});
+        m.exprs.push_back(MyIR::Expr{MyIR::OpType::Mux, tmp, w, {f_val, t_val, s}});
         return tmp;
     }
 

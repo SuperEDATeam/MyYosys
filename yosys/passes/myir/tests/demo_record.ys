@@ -24,6 +24,9 @@
 # 旁白：在做任何优化之前，先回答一个根本问题——
 #       “把 Verilog 翻成自定义 IR、再翻回去，电路还是原来那个吗？”
 
+# 旁白：read_verilog 用 Yosys 前端把 Verilog 源码解析成 AST / RTLIL；
+#       hierarchy -auto-top 自动选定顶层模块、整理设计层次。
+#       这两步是后面一切操作的共同起点。
 read_verilog D:/MyVSYosys-pub/yosys/passes/myir/tests/demo_all_opts.v
 hierarchy -auto-top
 

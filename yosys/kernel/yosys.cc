@@ -144,27 +144,9 @@ void memhasher_do()
 
 void yosys_banner()
 {
-	char cwd[4096];
 #if defined(_WIN32)
 	SetConsoleOutputCP(CP_UTF8);
-	wchar_t wcwd[4096];
-	if (GetCurrentDirectoryW(4096, wcwd) != 0) {
-		WideCharToMultiByte(CP_UTF8, 0, wcwd, -1, cwd, sizeof(cwd), NULL, NULL);
-	} else {
-		strcpy(cwd, ".");
-	}
-#else
-	if (getcwd(cwd, sizeof(cwd)) == NULL)
-		strcpy(cwd, ".");
 #endif
-
-	char cwd_display[64];
-	size_t cwd_len = strlen(cwd);
-	if (cwd_len > 55) {
-		snprintf(cwd_display, sizeof(cwd_display), "...%s", cwd + cwd_len - 52);
-	} else {
-		snprintf(cwd_display, sizeof(cwd_display), "%s", cwd);
-	}
 
 	const char *cyan = "\033[96m";
 	const char *blue = "\033[94m";
@@ -217,29 +199,19 @@ void yosys_banner()
 	log("%s+===================================================================================================+%s\n", cyan, reset);
 	log("%s|                                                                                                   |%s\n", cyan, reset);
 	// 3D block-letter banner (regenerate: python tools/gen_banner_art.py --emit-cc -o tools/banner_lines.inc)
-	log("%s|   %s%s    |%s\n", cyan, "    \033[1;96m####\033[0m     \033[1;96m########\033[0m         \033[1;96m####\033[0m       \033[1;96m########\033[0m                                           ", cyan, reset);
-	log("%s|   %s%s    |%s\n", cyan, "    \033[1;96m####\033[0m\033[37m:\033[0m    \033[1;96m##\033[0m\033[37m::::::\033[0m\033[1;96m##\033[0m       \033[1;96m####\033[0m\033[37m:\033[0m    \033[1;96m##\033[0m \033[37m:::::::\033[0m\033[1;96m##\033[0m                                         ", cyan, reset);
-	log("%s|   %s%s    |%s\n", cyan, "    \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.....\033[0m\033[1;96m##\033[0m\033[37m:\033[0m      \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m\033[37m:\033[0m \033[90m.......\033[0m\033[37m::\033[0m                                        ", cyan, reset);
-	log("%s|   %s%s    |%s\n", cyan, "    \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m########\033[0m \033[37m::\033[0m\033[90m.\033[0m     \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m    \033[37m:\033[0m\033[1;96m########\033[0m  \033[90m..\033[0m                                       ", cyan, reset);
-	log("%s|   %s%s    |%s\n", cyan, "    \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m\033[90m.\033[0m\033[37m:::::\033[0m\033[1;96m##\033[0m\033[90m..\033[0m     \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m     \033[90m.\033[0m\033[37m:::::::\033[0m\033[1;96m##\033[0m                                         ", cyan, reset);
-	log("%s|   %s%s    |%s\n", cyan, "    \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m\033[37m:\033[0m \033[90m....\033[0m\033[1;96m##\033[0m\033[37m:\033[0m      \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m       \033[90m......\033[0m\033[1;96m##\033[0m\033[37m:\033[0m                                        ", cyan, reset);
-	log("%s|   %s%s    |%s\n", cyan, "    \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m    \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m     \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m        \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m                                       ", cyan, reset);
-	log("%s|   %s%s    |%s\n", cyan, "    \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m    \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m     \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m    \033[37m:\033[0m\033[1;96m########\033[0m \033[37m::\033[0m\033[90m.\033[0m                                       ", cyan, reset);
-	log("%s|   %s%s    |%s\n", cyan, "     \033[37m::::\033[0m\033[90m.\033[0m    \033[37m::\033[0m\033[90m.\033[0m     \033[37m::\033[0m\033[90m.\033[0m      \033[37m::::\033[0m\033[90m.\033[0m     \033[90m.\033[0m\033[37m::::::::\033[0m \033[90m..\033[0m                                       ", cyan, reset);
-	log("%s|   %s%s    |%s\n", cyan, "      \033[90m....\033[0m     \033[90m..\033[0m      \033[90m..\033[0m       \033[90m....\033[0m       \033[90m........\033[0m                                         ", cyan, reset);
+	log("%s|   %s%s    |%s\n", cyan, "\033[1;96m##\033[0m        \033[1;96m##\033[0m \033[1;96m##\033[0m        \033[1;96m##\033[0m     \033[1;96m####\033[0m     \033[1;96m########\033[0m                                             ", cyan, reset);
+	log("%s|   %s%s    |%s\n", cyan, "\033[1;96m###\033[0m      \033[1;96m###\033[0m\033[37m:\033[0m \033[1;96m##\033[0m      \033[1;96m##\033[0m\033[37m::\033[0m    \033[1;96m####\033[0m\033[37m:\033[0m    \033[1;96m##\033[0m\033[37m::::::\033[0m\033[1;96m##\033[0m                                           ", cyan, reset);
+	log("%s|   %s%s    |%s\n", cyan, "\033[1;96m####\033[0m    \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m \033[1;96m##\033[0m    \033[1;96m##\033[0m\033[37m::\033[0m\033[90m..\033[0m   \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.....\033[0m\033[1;96m##\033[0m\033[37m:\033[0m                                          ", cyan, reset);
+	log("%s|   %s%s    |%s\n", cyan, "\033[1;96m##\033[0m\033[90m.\033[0m\033[1;96m##\033[0m  \033[1;96m##\033[0m\033[37m:\033[0m\033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m  \033[1;96m##\033[0m  \033[1;96m##\033[0m\033[37m::\033[0m\033[90m..\033[0m    \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m########\033[0m \033[37m::\033[0m\033[90m.\033[0m                                         ", cyan, reset);
+	log("%s|   %s%s    |%s\n", cyan, "\033[1;96m##\033[0m\033[37m:\033[0m \033[1;96m####\033[0m\033[37m::\033[0m\033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m####\033[0m\033[37m::\033[0m\033[90m..\033[0m     \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m\033[90m.\033[0m\033[37m:::::\033[0m\033[1;96m##\033[0m\033[90m..\033[0m                                         ", cyan, reset);
+	log("%s|   %s%s    |%s\n", cyan, "\033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m \033[1;96m##\033[0m\033[37m::\033[0m\033[90m.\033[0m\033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m    \033[1;96m##\033[0m\033[37m::\033[0m\033[90m..\033[0m      \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m\033[37m:\033[0m \033[90m....\033[0m\033[1;96m##\033[0m\033[37m:\033[0m                                          ", cyan, reset);
+	log("%s|   %s%s    |%s\n", cyan, "\033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m  \033[37m::\033[0m\033[90m..\033[0m\033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m    \033[1;96m##\033[0m\033[37m:\033[0m\033[90m..\033[0m       \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m    \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m                                         ", cyan, reset);
+	log("%s|   %s%s    |%s\n", cyan, "\033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[90m..\033[0m \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m    \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m        \033[1;96m####\033[0m\033[37m:\033[0m\033[90m.\033[0m   \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m    \033[1;96m##\033[0m\033[37m:\033[0m\033[90m.\033[0m                                         ", cyan, reset);
+	log("%s|   %s%s    |%s\n", cyan, " \033[37m::\033[0m\033[90m.\033[0m       \033[37m::\033[0m\033[90m.\033[0m     \033[37m::\033[0m\033[90m.\033[0m         \033[37m::::\033[0m\033[90m.\033[0m    \033[37m::\033[0m\033[90m.\033[0m     \033[37m::\033[0m\033[90m.\033[0m                                         ", cyan, reset);
+	log("%s|   %s%s    |%s\n", cyan, "  \033[90m..\033[0m        \033[90m..\033[0m      \033[90m..\033[0m          \033[90m....\033[0m     \033[90m..\033[0m      \033[90m..\033[0m                                         ", cyan, reset);
 	log("%s|   %s%s    |%s\n", cyan, "                                                                                            ", cyan, reset);
 	log("%s|                                                                                                   |%s\n", cyan, reset);
-	log("%s|      Visual Studio Port of Yosys Open SYnthesis Suite                                          |%s\n", cyan, reset, cyan, reset);
-	log("%s|                                                                                                   |%s\n", cyan, reset);
-	log("%s+---------------------------------------------------------------------------------------------------+%s\n", cyan, reset);
-	log("%s|                                                                                                   |%s\n", cyan, reset);
-	log("%s|   %sDirectory :%s %-82s%s|%s\n", cyan, cyan, reset, cwd_display, cyan, reset);
-	log("%s|   %sVersion   :%s %-82s%s|%s\n", cyan, cyan, reset, yosys_version_str, cyan, reset);
-	log("%s|                                                                                                   |%s\n", cyan, reset);
 	log("%s|   %sTip:%s Type %s'help'%s for help information.                                                               |%s\n", cyan, bold, reset, bold, reset, cyan, reset);
-	log("%s|                                                                                                   |%s\n", cyan, reset);
-	log("%s|   This software is open-source under the ISC License.                                                        |%s\n", cyan, reset, cyan, reset);
-	log("%s|   Copyright (C) 2012-2020 Claire Xenia Wolf & Contributors.                                                  |%s\n", cyan, reset, cyan, reset);
 	log("%s|                                                                                                   |%s\n", cyan, reset);
 	log("%s+===================================================================================================+%s\n", cyan, reset);
 
@@ -265,8 +237,6 @@ void yosys_banner()
 	}
 	log("  %s(^_^)%s  System initialization complete. Welcome aboard!               \n", green, reset);
 
-	log("\n");
-	log(" %s\n", yosys_version_str);
 	log("\n");
 }
 
@@ -790,7 +760,7 @@ const char *create_prompt(RTLIL::Design *design, int recursion_counter)
 	std::string str = "\n";
 	if (recursion_counter > 1)
 		str += stringf("(%d) ", recursion_counter);
-	str += "yosys";
+	str += "MYIR";
 	if (!design->selected_active_module.empty())
 		str += stringf(" [%s]", RTLIL::unescape_id(design->selected_active_module).c_str());
 	if (!design->selection_stack.empty() && !design->selection_stack.back().full_selection) {
@@ -1694,7 +1664,7 @@ void shell(RTLIL::Design *design)
 		std::string str;
 		if (recursion_counter > 1)
 			str += stringf("(%d) ", recursion_counter);
-		str += "yosys";
+		str += "MYIR";
 		if (!design->selected_active_module.empty())
 			str += stringf(" [%s]", RTLIL::unescape_id(design->selected_active_module).c_str());
 		if (!design->selection_stack.empty() && !design->selection_stack.back().full_selection) {

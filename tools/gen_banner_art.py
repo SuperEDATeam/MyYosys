@@ -16,7 +16,7 @@ import sys
 # All glyphs: 12×8 body + 1 padding row; double-stroke (##) block style.
 GW, GH = 12, 9
 LETTER_GAP = 1
-WORD = "IRIS"
+WORD = "MYIR"
 MAX_VISIBLE_WIDTH = 92  # 7×12 + 6 gaps + 2px extrusion
 
 # Extrusion offsets (dx, dy) from back to front; last layer is the face.
